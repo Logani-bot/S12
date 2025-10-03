@@ -1,0 +1,10 @@
+# ------------------------------
+# config.yml  (선택 사항: 없으면 DEFAULT_CFG 사용)
+# ------------------------------
+# mode/replay_csv/test_date 등을 사용자 정의하려면 이 파일을 만드세요.
+# 예)
+# test_date: 2025-09-30
+# paths:
+#   db: /Users/lll/Documents/Macoding/S12/s2.sqlite
+#   backup: /Users/lll/Documents/Macoding/S12/backup/
+#   replay_csv: /Users/lll/Documents/Macoding/S12/replay/ohlcv_2025-09-30.csv
