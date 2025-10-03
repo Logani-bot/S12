@@ -1,0 +1,30 @@
+api:
+  base_url: "https://api.kiwoom.com"
+  token_url: "/oauth2/token"
+  rank_endpoint: "/api/dostk/rkinfo/ka10031"
+  timeout_sec: 15
+
+auth:
+  client_id: "7bxDdjABpIIE8cj_9M0jHbwbrw7yquhUnjlTI4bX0A4"
+  client_secret: "ETp9DWeyOmeecc4hd0W8Yo2sNcsqSqVCISzhtKXBOvY"
+  grant_type: "client_credentials"
+
+params:
+  market: "STK"
+  count: 200
+
+fields:
+  list_key: "output"
+  code: "code"
+  name: "name"
+  market: "market"
+  turnover_won: "turnover"
+  close: ""
+  volume: ""
+
+paths:
+  save_dir: "/Users/lll/Documents/Macoding/S12/rest"
+  replay_dir: "/Users/lll/Documents/Macoding/S12/replay"
+
+threshold:
+  turnover_eok: 5000
