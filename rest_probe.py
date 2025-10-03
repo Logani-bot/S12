@@ -413,3 +413,158 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ==============================================
+# FINAL | rest_probe.py (clean, single-file)
+# ==============================================
+# - 별도 모듈 불필요 (s12_rank_patch.py 참조 제거)
+# - api_id 본문 방식 POST 호출 + 500 재시도 + 캐시 폴백 + 저장
+# - 사용법:
+#     python3 rest_probe.py --token "<BEARER_TOKEN>" \
+#         --base-url "https://api.kiwoom.com" --market ALL --count 100 \
+#         --out-dir "/Users/lll/Documents/Macoding/S12/rest"
+
+import argparse
+import datetime as dt
+import glob
+import json
+import os
+import time
+from typing import Any, Dict, Optional, Tuple
+
+import requests
+
+
+def _ts() -> str:
+    return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def save_json(data: Dict[str, Any], out_path: str) -> None:
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def load_latest_cache(out_dir: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    pattern = os.path.join(out_dir, "*.json")
+    files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+    for path in files:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data, path
+        except Exception:
+            continue
+    return None, None
+
+
+def fetch_rank(
+    base_url: str,
+    token: str,
+    market: str = "ALL",
+    count: int = 100,
+    api_id: str = "ka10031",
+    retry_intervals = (0.5, 1.0, 2.0),
+) -> Tuple[Optional[Dict[str, Any]], Optional[requests.Response], str]:
+    """POST /api/dostk/rkinfo 로 랭크 데이터 요청.
+
+    반환: (json_dict | None, last_response | None, status)
+        - status: 'live' | 'retry' | 'fail'
+    """
+    url = f"{base_url.rstrip('/')}/api/dostk/rkinfo"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "api_id": api_id,  # 핵심: REST는 tr_cd 대신 api_id 사용
+        "market": market,
+        "count": int(count),
+    }
+
+    last_resp: Optional[requests.Response] = None
+
+    # 최초 시도
+    try:
+        resp = requests.post(url, headers=headers, json=payload, timeout=15)
+        last_resp = resp
+        if resp.status_code == 200:
+            try:
+                data = resp.json()
+            except Exception:
+                data = None
+            if data is not None:
+                return data, resp, 'live'
+        elif 500 <= resp.status_code < 600:
+            pass  # 재시도 진입
+        else:
+            return None, resp, 'fail'
+    except Exception:
+        pass
+
+    # 재시도 (지수 백오프)
+    for sec in retry_intervals:
+        time.sleep(sec)
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=15)
+            last_resp = resp
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = None
+                if data is not None:
+                    return data, resp, 'retry'
+            elif 500 <= resp.status_code < 600:
+                continue
+            else:
+                return None, resp, 'fail'
+        except Exception:
+            continue
+
+    return None, last_resp, 'fail'
+
+
+def main():
+    parser = argparse.ArgumentParser(description="S12 Rank API (single-file)")
+    parser.add_argument("--token", required=True, help="Bearer Access Token")
+    parser.add_argument("--base-url", default="https://api.kiwoom.com")
+    parser.add_argument("--market", default="ALL")
+    parser.add_argument("--count", type=int, default=100)
+    parser.add_argument("--api-id", default="ka10031")
+    parser.add_argument("--out-dir", default="/Users/lll/Documents/Macoding/S12/rest")
+    args = parser.parse_args()
+
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    out_file = os.path.join(args.out_dir, f"{args.api_id}_{today}.json")
+
+    print(f"[{_ts()}] [INFO] Fetch rank -> POST /api/dostk/rkinfo (api_id in body)")
+    data, resp, status = fetch_rank(
+        base_url=args.base_url,
+        token=args.token,
+        market=args.market,
+        count=args.count,
+        api_id=args.api_id,
+    )
+
+    if data is not None:
+        save_json(data, out_file)
+        src = "live" if status == 'live' else 'retry'
+        print(f"[{_ts()}] [OK] {src} response saved: {out_file}")
+        return
+
+    # 실패 -> 캐시 폴백
+    scode = resp.status_code if resp else 'NO_RESP'
+    print(f"[{_ts()}] [ERROR] Rank API failed. status={scode}")
+    cache, cache_path = load_latest_cache(args.out_dir)
+    if cache is not None:
+        save_json(cache, out_file)
+        print(f"[{_ts()}] [WARN] Using cache: {cache_path} -> saved as {out_file}")
+    else:
+        print(f"[{_ts()}] [FATAL] No cache available in: {args.out_dir}")
+        raise SystemExit(2)
+
+
+if __name__ == "__main__":
+    main()
