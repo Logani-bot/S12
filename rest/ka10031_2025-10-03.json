@@ -1,0 +1,4 @@
+{
+  "return_msg": "입력 값 오류입니다[1501:API ID가 Null이거나 값이 없습니다]",
+  "return_code": 2
+}
