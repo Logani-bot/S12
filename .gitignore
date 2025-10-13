@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Excel temporary files
+~$*.xlsx
+~$*.xls
+
+# API Keys (보안)
+*secret*
+*key*.txt
+
+# Data files (선택적으로 제외)
+*.csv
+*_test.xlsx
+test_*.xlsx
+daily_test.xlsx
+
+# Old files
+*_20*.xlsx
+*_20*.csv
+
+# Specific files to ignore
+=eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs
+leading_3m_metrics_20251008_140751.xlsx
+leading_3m_metrics.xlsx
+leading_universe_20251008_151508.xlsx
+leading_universe.xlsx
+turnover_rank_20251008.csv
+turnover_rank_split_20251008.csv
+turnover_universe_20251008.csv
+turnover_universe_2w.xlsx
+turnover_universe_test.xlsx
+test_count.xlsx
+test_scenarios.md
+test_unique.xlsx
+
