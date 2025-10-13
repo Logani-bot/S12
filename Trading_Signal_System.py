@@ -17,6 +17,15 @@ import requests
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
 
+# 텔레그램 알람
+try:
+    from telegram_notifier import send_daily_report, send_error_alert
+    TELEGRAM_AVAILABLE = True
+except ImportError:
+    TELEGRAM_AVAILABLE = False
+    logger_telegram = logging.getLogger(__name__)
+    logger_telegram.warning("telegram_notifier 모듈을 찾을 수 없습니다. 텔레그램 알람이 비활성화됩니다.")
+
 # ==================== 설정 ====================
 logging.basicConfig(
     level=logging.INFO,
@@ -779,116 +788,134 @@ def main():
     signal_file = args.signal
     alert_threshold = args.alert_threshold
     
-    logger.info("=" * 80)
-    logger.info("Trading Signal System 시작")
-    logger.info(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info("=" * 80)
-    
-    # 1. API 토큰 획득
     try:
-        token = get_api_token(args.appkey, args.secret)
-    except Exception as e:
-        logger.error(f"API 토큰 획득 실패: {e}")
-        sys.exit(1)
-    
-    # 2. 유니버스 로드
-    try:
-        df_universe = pd.read_excel(universe_file, sheet_name=0)
-        logger.info(f"✓ 추적 대상: {len(df_universe)}개 종목")
-    except FileNotFoundError:
-        logger.error(f"유니버스 파일 없음: {universe_file}")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"유니버스 로드 실패: {e}")
-        sys.exit(1)
-    
-    # 3. 기존 시그널 로드 (있으면)
-    df_summary = pd.DataFrame()
-    df_history = pd.DataFrame()
-    
-    if Path(signal_file).exists():
+        logger.info("=" * 80)
+        logger.info("Trading Signal System 시작")
+        logger.info(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info("=" * 80)
+        
+        # 1. API 토큰 획득
         try:
-            df_summary = pd.read_excel(signal_file, sheet_name="Summary")
-            df_history = pd.read_excel(signal_file, sheet_name="History")
-            logger.info(f"✓ 기존 시그널 로드: Summary {len(df_summary)}개, History {len(df_history)}개")
+            token = get_api_token(args.appkey, args.secret)
         except Exception as e:
-            logger.warning(f"기존 시그널 로드 실패 (새로 생성): {e}")
+            logger.error(f"API 토큰 획득 실패: {e}")
+            if TELEGRAM_AVAILABLE:
+                send_error_alert(f"API 토큰 획득 실패: {e}", "Trading_Signal_System")
+            sys.exit(1)
+        
+        # 2. 유니버스 로드
+        try:
+            df_universe = pd.read_excel(universe_file, sheet_name=0)
+            logger.info(f"✓ 추적 대상: {len(df_universe)}개 종목")
+        except FileNotFoundError:
+            logger.error(f"유니버스 파일 없음: {universe_file}")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"유니버스 로드 실패: {e}")
+            sys.exit(1)
+        
+        # 3. 기존 시그널 로드 (있으면)
+        df_summary = pd.DataFrame()
+        df_history = pd.DataFrame()
+        
+        if Path(signal_file).exists():
+            try:
+                df_summary = pd.read_excel(signal_file, sheet_name="Summary")
+                df_history = pd.read_excel(signal_file, sheet_name="History")
+                logger.info(f"✓ 기존 시그널 로드: Summary {len(df_summary)}개, History {len(df_history)}개")
+            except Exception as e:
+                logger.warning(f"기존 시그널 로드 실패 (새로 생성): {e}")
+        
+        # 4. 종목별 분석
+            logger.info("\n" + "=" * 80)
+            logger.info("종목별 분석 시작")
+            logger.info("=" * 80)
     
-    # 4. 종목별 분석
-    logger.info("\n" + "=" * 80)
-    logger.info("종목별 분석 시작")
-    logger.info("=" * 80)
+            results = []
+            alerts = []
+            analyzed_tickers = set()
     
-    results = []
-    alerts = []
-    analyzed_tickers = set()
-    
-    for idx, row in df_universe.iterrows():
-        ticker = str(row["티커"]).zfill(6)
-        name = row["종목명"]
-        recent_leading_date = row.get("최근주도주")  # ⭐ 최근 주도주 날짜 (재등장 시점)
+            for idx, row in df_universe.iterrows():
+                ticker = str(row["티커"]).zfill(6)
+                name = row["종목명"]
+                recent_leading_date = row.get("최근주도주")  # ⭐ 최근 주도주 날짜 (재등장 시점)
         
-        logger.info(f"\n[{idx + 1}/{len(df_universe)}] {name} ({ticker}) 분석 중...")
+                logger.info(f"\n[{idx + 1}/{len(df_universe)}] {name} ({ticker}) 분석 중...")
         
-        # History에 이미 있는 종목이 재등장한 경우 (History는 유지, Summary만 신규 추가)
-        if not df_history.empty and ticker in df_history["티커"].values:
-            logger.info(f"  ♻️ 과거 매매 기록 있음 - 새 사이클 시작")
+                # History에 이미 있는 종목이 재등장한 경우 (History는 유지, Summary만 신규 추가)
+                if not df_history.empty and ticker in df_history["티커"].values:
+                    logger.info(f"  ♻️ 과거 매매 기록 있음 - 새 사이클 시작")
         
-        result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
+                result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
         
-        # 첫 주도주 날짜 추가
-        if result:
-            # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
-            existing = df_summary[df_summary["티커"] == ticker]
-            if not existing.empty and "첫주도주" in existing.columns:
-                result["첫주도주"] = existing["첫주도주"].values[0]
-            # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
-            elif recent_leading_date:
-                result["첫주도주"] = recent_leading_date
+                # 첫 주도주 날짜 추가
+                if result:
+                    # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
+                    existing = df_summary[df_summary["티커"] == ticker]
+                    if not existing.empty and "첫주도주" in existing.columns:
+                        result["첫주도주"] = existing["첫주도주"].values[0]
+                    # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
+                    elif recent_leading_date:
+                        result["첫주도주"] = recent_leading_date
         
-        if result:
-            results.append(result)
-            analyzed_tickers.add(ticker)
+                if result:
+                    results.append(result)
+                    analyzed_tickers.add(ticker)
             
-            # 알람 대상 확인
-            alert_status = result["알람상태"]
-            if alert_status not in [AlertStatus.WATCHING, AlertStatus.WAITING]:
-                alerts.append(result)
-                logger.info(f"  🔔 {result['상태메시지']}")
+                    # 알람 대상 확인
+                    alert_status = result["알람상태"]
+                    if alert_status not in [AlertStatus.WATCHING, AlertStatus.WAITING]:
+                        alerts.append(result)
+                        logger.info(f"  🔔 {result['상태메시지']}")
         
-        time.sleep(0.2)  # API 레이트 리미트
+                time.sleep(0.2)  # API 레이트 리미트
     
-    # 5. Summary 업데이트 (Universe에 없는 기존 종목 유지 + 새 분석 결과)
-    if results:
-        df_new = pd.DataFrame(results)
+            # 5. Summary 업데이트 (Universe에 없는 기존 종목 유지 + 새 분석 결과)
+            if results:
+                df_new = pd.DataFrame(results)
         
-        # Universe에 없지만 Summary에 있는 종목 (과거 매수했던 종목들)
-        if not df_summary.empty:
-            df_keep = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
-            df_summary = pd.concat([df_new, df_keep], ignore_index=True)
-        else:
-            df_summary = df_new
+                # Universe에 없지만 Summary에 있는 종목 (과거 매수했던 종목들)
+                if not df_summary.empty:
+                    df_keep = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
+                    df_summary = pd.concat([df_new, df_keep], ignore_index=True)
+                else:
+                    df_summary = df_new
     
-    # 6. SOLD 종목 History로 이동
-    df_summary, df_history = move_to_history(df_summary, df_history)
+            # 6. SOLD 종목 History로 이동
+            df_summary, df_history = move_to_history(df_summary, df_history)
     
-    # 7. 저장
-    save_signals(df_summary, df_history, signal_file)
+            # 7. 저장
+            save_signals(df_summary, df_history, signal_file)
     
-    # 8. 알람 출력
-    logger.info("\n" + "=" * 80)
-    logger.info(f"🔔 알람: {len(alerts)}개")
-    logger.info("=" * 80)
+            # 8. 알람 출력
+            logger.info("\n" + "=" * 80)
+            logger.info(f"🔔 알람: {len(alerts)}개")
+            logger.info("=" * 80)
     
-    for alert in alerts:
-        logger.info(f"🔴 {alert['종목명']} ({alert['티커']}): {alert['상태메시지']}")
+            for alert in alerts:
+                logger.info(f"🔴 {alert['종목명']} ({alert['티커']}): {alert['상태메시지']}")
     
-    # 9. 완료
-    logger.info("\n" + "=" * 80)
-    logger.info("완료")
-    logger.info(f"분석: {len(results)}개 종목")
-    logger.info(f"알람: {len(alerts)}개")
-    logger.info("=" * 80)
+            # 9. 텔레그램 일일 리포트 전송
+            if TELEGRAM_AVAILABLE:
+                try:
+                    # 기본값: 본인에게만 (원하면 ["all"]로 변경 가능)
+                    send_daily_report(alerts, len(df_summary), recipients=["me"])
+                    logger.info("✓ 텔레그램 일일 리포트 전송 완료")
+                except Exception as e:
+                    logger.error(f"텔레그램 전송 실패: {e}")
+    
+        # 10. 완료
+        logger.info("\n" + "=" * 80)
+        logger.info("완료")
+        logger.info(f"분석: {len(results)}개 종목")
+        logger.info(f"알람: {len(alerts)}개")
+        logger.info("=" * 80)
+    
+    except Exception as e:
+        logger.error(f"예기치 않은 오류 발생: {e}", exc_info=True)
+        if TELEGRAM_AVAILABLE:
+            send_error_alert(f"예기치 않은 오류: {str(e)}", "Trading_Signal_System")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

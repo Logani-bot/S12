@@ -31,7 +31,7 @@ CHAT_IDS = {
 }
 
 
-def send_telegram_message(message: str, recipients: List[str] = None, parse_mode: str = "Markdown") -> bool:
+def send_telegram_message(message: str, recipients: List[str] = None, parse_mode: str = "HTML") -> bool:
     """
     텔레그램 메시지 전송
     
@@ -95,9 +95,9 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
     
     # 헤더
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    message = f"📊 *일일 트레이딩 리포트*\n"
+    message = f"📊 <b>일일 트레이딩 리포트</b>\n"
     message += f"🕐 {now}\n"
-    message += f"━━━━━━━━━━━━━━━━━\n\n"
+    message += f"───────────────\n\n"
     
     if not alerts:
         message += f"✅ 총 {total_stocks}개 종목 분석\n"
@@ -121,38 +121,72 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
     
     # 1차 매수 접근 중 (10% 이내)
     if ready_buy1:
-        message += f"🟡 *1차 매수 접근 중* ({len(ready_buy1)}개)\n"
+        message += f"🟡 <b>1차 매수 접근 중</b> ({len(ready_buy1)}개)\n"
+        
         for stock in ready_buy1:
             name = stock.get("종목명", "")
+            close = stock.get("종가", 0)
+            buy1 = stock.get("1차매수선", 0)
             dist = stock.get("1차매수선이격도(%)", 0)
-            message += f"  • {name}: {dist:.1f}% 남음\n"
+            
+            message += f"  • {name}\n"
+            message += f"    현재가: {int(close):,}원\n"
+            message += f"    매수가: {int(round(buy1)):,}원\n"
+            message += f"    이격도: {dist:.1f}%\n\n"
+        
         message += "\n"
     
     # 매수 완료 종목
     if bought_stocks:
-        message += f"🔴 *매수 완료 종목* ({len(bought_stocks)}개)\n"
+        message += f"🔴 <b>매수 완료 종목</b> ({len(bought_stocks)}개)\n"
+        
         for stock in bought_stocks:
             name = stock.get("종목명", "")
-            status = stock.get("매수상태", "")
+            close = stock.get("종가", 0)
             avg_price = stock.get("평균매수가", 0)
-            if avg_price:
-                message += f"  • {name} ({status}): 평균 {avg_price:,.0f}원\n"
+            
+            message += f"  • {name}\n"
+            message += f"    현재가: {int(close):,}원\n"
+            
+            if avg_price and close:
+                dist = ((close - avg_price) / avg_price) * 100
+                message += f"    평균가: {int(round(avg_price)):,}원\n"
+                message += f"    이격도: {dist:+.1f}%\n\n"
             else:
-                message += f"  • {name} ({status})\n"
+                message += f"    평균가: -\n"
+                message += f"    이격도: -\n\n"
+        
         message += "\n"
     
     # 매도선 접근
     if ready_sell:
-        message += f"🟢 *매도선 접근* ({len(ready_sell)}개)\n"
+        message += f"🟢 <b>매도선 접근</b> ({len(ready_sell)}개)\n"
+        
         for stock in ready_sell:
             name = stock.get("종목명", "")
+            close = stock.get("종가", 0)
             msg = stock.get("상태메시지", "")
-            message += f"  • {name}: {msg}\n"
+            
+            # 매도선 찾기
+            if "+3%" in msg:
+                target = stock.get("1차매도선(+3%)", 0)
+                dist = stock.get("1차매도선이격도(%)", 0)
+            elif "+5%" in msg:
+                target = stock.get("2차매도선(+5%)", 0)
+                dist = stock.get("2차매도선이격도(%)", 0)
+            elif "+7%" in msg:
+                target = stock.get("3차매도선(+7%)", 0)
+                dist = stock.get("3차매도선이격도(%)", 0)
+            else:
+                target = 0
+                dist = 0
+            
+            message += f"  • {name}\n"
+            message += f"    현재가: {int(close):,}원\n"
+            message += f"    목표가: {int(round(target)):,}원\n"
+            message += f"    이격도: {dist:+.1f}%\n\n"
+        
         message += "\n"
-    
-    message += f"━━━━━━━━━━━━━━━━━\n"
-    message += f"📈 총 {total_stocks}개 종목 추적 중\n"
-    message += f"🔔 알람: {len(alerts)}개"
     
     send_telegram_message(message, recipients)
 
@@ -191,13 +225,13 @@ def send_realtime_alert(alert_type: str, stock_name: str, ticker: str,
     
     emoji = emoji_map.get(alert_type, "🔔")
     
-    message = f"{emoji} *{alert_type}*\n"
+    message = f"{emoji} <b>{alert_type}</b>\n"
     message += f"🕐 {now}\n"
-    message += f"━━━━━━━━━━━━━━━━━\n"
-    message += f"📌 종목: *{stock_name}* ({ticker})\n"
-    message += f"💵 현재가: `{current_price:,.0f}원`\n"
-    message += f"🎯 목표가: `{target_price:,.0f}원`\n"
-    message += f"📊 이격도: `{distance_pct:.2f}%`\n"
+    message += f"───────────────\n"
+    message += f"종목: {stock_name}\n"
+    message += f"현재가: {int(current_price):,}원\n"
+    message += f"목표가: {int(round(target_price)):,}원\n"
+    message += f"이격도: {distance_pct:+.2f}%\n"
     
     send_telegram_message(message, recipients)
 
@@ -218,12 +252,12 @@ def send_error_alert(error_message: str, script_name: str = None, recipients: Li
     
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    message = f"❌ *시스템 에러 발생*\n"
+    message = f"❌ <b>시스템 에러 발생</b>\n"
     message += f"🕐 {now}\n"
     if script_name:
         message += f"📝 스크립트: {script_name}\n"
-    message += f"━━━━━━━━━━━━━━━━━\n"
-    message += f"```\n{error_message}\n```"
+    message += f"───────────────\n"
+    message += f"<pre>{error_message}</pre>"
     
     send_telegram_message(message, recipients)
 
@@ -231,7 +265,7 @@ def send_error_alert(error_message: str, script_name: str = None, recipients: Li
 # 테스트용
 if __name__ == "__main__":
     # 간단한 테스트 메시지
-    test_msg = "🤖 텔레그램 봇 테스트\n테스트 메시지입니다!"
+    test_msg = "🤖 <b>텔레그램 봇 테스트</b>\n테스트 메시지입니다!"
     
     # 본인에게만 테스트
     print("본인에게 테스트 메시지 전송 중...")
