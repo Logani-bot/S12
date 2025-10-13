@@ -350,8 +350,17 @@ def apply_formatting(path: str, sheet_name: str, update_date: str = None):
                 if cell.value not in (None, ""):
                     cell.border = thin_border
                     
-                    # A,B열(날짜), C열(티커), D열(종목명): 중앙정렬
-                    if col_idx in [1, 2, 3, 4]:
+                    # A,B열(날짜): 중앙정렬
+                    if col_idx in [1, 2]:
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+                    
+                    # C열(티커): 텍스트 포맷 + 중앙정렬 (⭐ 앞의 0 보존)
+                    elif col_idx == 3:
+                        cell.number_format = '@'  # 텍스트 포맷
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+                    
+                    # D열(종목명): 중앙정렬
+                    elif col_idx == 4:
                         cell.alignment = Alignment(horizontal="center", vertical="center")
                     
                     # E열(거래대금): 천단위 콤마 + 오른쪽 정렬

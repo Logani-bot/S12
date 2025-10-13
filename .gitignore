@@ -28,6 +28,8 @@ Thumbs.db
 # API Keys (보안)
 *secret*
 *key*.txt
+.env
+.env.local
 
 # Data files (선택적으로 제외)
 *.csv

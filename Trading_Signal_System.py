@@ -487,6 +487,14 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         "최종업데이트": now.strftime("%Y-%m-%d %H:%M:%S")
     }
     
+    # ⭐ 첫주도주 날짜만 (시간 제거)
+    if "첫주도주" in result and result["첫주도주"]:
+        try:
+            if isinstance(result["첫주도주"], str):
+                result["첫주도주"] = pd.to_datetime(result["첫주도주"]).strftime("%Y-%m-%d")
+        except:
+            pass
+    
     return result
 
 
@@ -548,12 +556,156 @@ def determine_alert_status(buy_status: str, close: float,
 
 
 # ==================== 엑셀 저장 ====================
+def apply_signal_formatting(file_path: str, sheet_name: str):
+    """엑셀 포맷팅 적용"""
+    from openpyxl import load_workbook
+    from openpyxl.styles import Alignment, Font, Border, Side
+    from openpyxl.utils import get_column_letter
+    
+    wb = load_workbook(file_path)
+    ws = wb[sheet_name]
+    
+    # 테두리 스타일
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # 헤더 찾기
+    headers = [cell.value for cell in ws[1]]
+    
+    # 열 인덱스 찾기
+    col_indices = {}
+    for idx, header in enumerate(headers, start=1):
+        col_indices[header] = idx
+    
+    # 금액 관련 열
+    price_cols = ["종가", "저가", "고가", "20일선", "-20%엔벨로프", 
+                  "1차매수선", "1차매수가", "2차매수선", "2차매수가", 
+                  "3차매수선", "3차매수가", "평균매수가", 
+                  "1차매도선(+3%)", "2차매도선(+5%)", "3차매도선(+7%)", "최고도달선"]
+    
+    # 이격도 열 (%)
+    pct_cols = ["1차매수선이격도(%)", "2차매수선이격도(%)", "3차매수선이격도(%)",
+                "1차매도선이격도(%)", "2차매도선이격도(%)", "3차매도선이격도(%)", "실현수익률(%)"]
+    
+    # 날짜 열
+    date_cols = ["첫주도주", "1차매수일", "2차매수일", "3차매수일", "종료일"]
+    
+    # 데이터 행 포맷팅
+    for row_idx in range(2, ws.max_row + 1):
+        for col_idx in range(1, ws.max_column + 1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            header = headers[col_idx - 1]
+            
+            # 테두리 적용 (최종업데이트 제외)
+            if header != "최종업데이트":
+                cell.border = thin_border
+            
+            # 금액 포맷 (천 자리 콤마)
+            if header in price_cols:
+                if cell.value is not None and cell.value != "":
+                    cell.number_format = '#,##0'
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+            
+            # 이격도 포맷 (% 포맷)
+            elif header in pct_cols:
+                if cell.value is not None and cell.value != "":
+                    # 값을 100으로 나눠서 실제 % 값으로 변환
+                    try:
+                        cell.value = float(cell.value) / 100
+                    except:
+                        pass
+                    cell.number_format = '0.00%'
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # 날짜 포맷
+            elif header in date_cols:
+                if cell.value is not None and cell.value != "":
+                    cell.number_format = 'YYYY-MM-DD'
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # 텍스트 중앙 정렬 (티커, 종목명, 상태 등)
+            elif header in ["티커", "종목명", "매수상태", "알람상태", "종료사유"]:
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # 기타는 왼쪽 정렬
+            else:
+                cell.alignment = Alignment(horizontal="left", vertical="center")
+    
+    # 헤더 포맷팅
+    for col_idx in range(1, ws.max_column + 1):
+        header_cell = ws.cell(row=1, column=col_idx)
+        header = headers[col_idx - 1]
+        
+        # 최종업데이트 제외하고 테두리
+        if header != "최종업데이트":
+            header_cell.border = thin_border
+        
+        header_cell.font = Font(bold=True)
+        header_cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # 열 너비 자동 조정
+    for col_idx in range(1, ws.max_column + 1):
+        column_letter = get_column_letter(col_idx)
+        header = headers[col_idx - 1]
+        
+        # 열 너비 설정
+        if header == "티커":
+            ws.column_dimensions[column_letter].width = 10
+        elif header == "종목명":
+            ws.column_dimensions[column_letter].width = 15
+        elif header == "상태메시지":
+            ws.column_dimensions[column_letter].width = 30
+        elif header in date_cols:
+            ws.column_dimensions[column_letter].width = 12
+        elif header in price_cols:
+            ws.column_dimensions[column_letter].width = 12
+        elif header in pct_cols:
+            ws.column_dimensions[column_letter].width = 12
+        elif header == "매수상태" or header == "알람상태":
+            ws.column_dimensions[column_letter].width = 12
+        elif header == "최종업데이트":
+            ws.column_dimensions[column_letter].width = 20
+        else:
+            ws.column_dimensions[column_letter].width = 12
+    
+    # 최종 업데이트 위치 조정 (첫주도주 제목 셀 두 칸 오른쪽 = C1)
+    if "첫주도주" in col_indices:
+        first_leading_col = col_indices["첫주도주"]
+        update_col = first_leading_col + 2  # 두 칸 오른쪽
+        
+        # 현재 시간
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # C1 셀에 최종 업데이트 넣기 (왼쪽 정렬, 테두리 없음)
+        update_cell = ws.cell(row=1, column=update_col)
+        update_cell.value = f"최종 업데이트: {now}"
+        update_cell.alignment = Alignment(horizontal="left", vertical="center")
+        update_cell.border = Border()  # 테두리 없음
+        update_cell.font = Font(bold=False)
+    
+    wb.save(file_path)
+
+
 def save_signals(df_summary: pd.DataFrame, df_history: pd.DataFrame, file_path: str):
     """시그널을 엑셀에 저장 (Summary + History)"""
     
+    # ⭐ 매수량, 총투자금액, 총보유수량 열 제거
+    cols_to_drop = ["1차매수량", "2차매수량", "3차매수량", "총투자금액", "총보유수량"]
+    df_summary = df_summary.drop(columns=[c for c in cols_to_drop if c in df_summary.columns], errors='ignore')
+    df_history = df_history.drop(columns=[c for c in cols_to_drop if c in df_history.columns], errors='ignore')
+    
+    # 엑셀에 저장
     with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
         df_summary.to_excel(writer, sheet_name="Summary", index=False)
         df_history.to_excel(writer, sheet_name="History", index=False)
+    
+    # 포맷팅 적용
+    apply_signal_formatting(file_path, "Summary")
+    apply_signal_formatting(file_path, "History")
     
     logger.info(f"✓ Summary 저장 완료: {len(df_summary)}개 종목")
     if not df_history.empty:
@@ -561,7 +713,7 @@ def save_signals(df_summary: pd.DataFrame, df_history: pd.DataFrame, file_path: 
 
 
 def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """SOLD 상태 종목을 Summary → History로 이동"""
+    """SOLD 상태 종목을 Summary → History로 이동 (축적식)"""
     
     # SOLD 종목 찾기
     mask_sold = df_summary["매수상태"] == BuyStatus.SOLD
@@ -570,10 +722,11 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
     if df_sold.empty:
         return df_summary, df_history
     
-    # History에 추가 (종료일, 종료사유, 실현수익률 추가)
+    # History에 추가 (종료일, 종료사유, 실현수익률 추가) - ⭐ 축적식으로 누적
     now = datetime.now().strftime("%Y-%m-%d")
     
     for idx, row in df_sold.iterrows():
+        # 종료일 추가
         row["종료일"] = now
         
         # 종료사유 판단 (최고도달선 기준)
@@ -583,11 +736,11 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
         sell1 = row.get("1차매도선(+3%)")
         
         if max_high and sell3 and max_high >= sell3:
-            row["종료사유"] = "+7% 도달"
+            row["종료사유"] = "+7% 도달 → 전량 매도"
         elif max_high and sell2 and max_high >= sell2:
-            row["종료사유"] = "+5% 재터치"
+            row["종료사유"] = "+5% 재터치 → 전량 매도"
         elif max_high and sell1 and max_high >= sell1:
-            row["종료사유"] = "+3% 재터치"
+            row["종료사유"] = "+3% 재터치 → 전량 매도"
         else:
             row["종료사유"] = "매도 완료"
         
@@ -600,12 +753,13 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
         else:
             row["실현수익률(%)"] = 0
         
+        # ⭐ 축적식: 기존 History에 계속 추가 (제거 안 함)
         df_history = pd.concat([df_history, row.to_frame().T], ignore_index=True)
     
-    # Summary에서 제거
+    # Summary에서만 제거
     df_summary = df_summary[~mask_sold].reset_index(drop=True)
     
-    logger.info(f"✓ {len(df_sold)}개 종목을 History로 이동")
+    logger.info(f"✓ {len(df_sold)}개 종목을 History로 이동 (총 {len(df_history)}개 기록)")
     
     return df_summary, df_history
 
@@ -667,17 +821,34 @@ def main():
     
     results = []
     alerts = []
+    analyzed_tickers = set()
     
     for idx, row in df_universe.iterrows():
         ticker = str(row["티커"]).zfill(6)
         name = row["종목명"]
+        recent_leading_date = row.get("최근주도주")  # ⭐ 최근 주도주 날짜 (재등장 시점)
         
         logger.info(f"\n[{idx + 1}/{len(df_universe)}] {name} ({ticker}) 분석 중...")
         
+        # History에 이미 있는 종목이 재등장한 경우 (History는 유지, Summary만 신규 추가)
+        if not df_history.empty and ticker in df_history["티커"].values:
+            logger.info(f"  ♻️ 과거 매매 기록 있음 - 새 사이클 시작")
+        
         result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
+        
+        # 첫 주도주 날짜 추가
+        if result:
+            # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
+            existing = df_summary[df_summary["티커"] == ticker]
+            if not existing.empty and "첫주도주" in existing.columns:
+                result["첫주도주"] = existing["첫주도주"].values[0]
+            # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
+            elif recent_leading_date:
+                result["첫주도주"] = recent_leading_date
         
         if result:
             results.append(result)
+            analyzed_tickers.add(ticker)
             
             # 알람 대상 확인
             alert_status = result["알람상태"]
@@ -687,9 +858,16 @@ def main():
         
         time.sleep(0.2)  # API 레이트 리미트
     
-    # 5. Summary 업데이트
+    # 5. Summary 업데이트 (Universe에 없는 기존 종목 유지 + 새 분석 결과)
     if results:
-        df_summary = pd.DataFrame(results)
+        df_new = pd.DataFrame(results)
+        
+        # Universe에 없지만 Summary에 있는 종목 (과거 매수했던 종목들)
+        if not df_summary.empty:
+            df_keep = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
+            df_summary = pd.concat([df_new, df_keep], ignore_index=True)
+        else:
+            df_summary = df_new
     
     # 6. SOLD 종목 History로 이동
     df_summary, df_history = move_to_history(df_summary, df_history)
