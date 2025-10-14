@@ -12,11 +12,12 @@ import sys
 import logging
 import requests
 import pandas as pd
-from datetime import datetime, time
+from datetime import datetime, time as time_type
 from pathlib import Path
 import json
 from typing import Dict, List, Tuple, Optional
 import argparse
+import time
 
 # 로깅 설정
 logging.basicConfig(
@@ -29,12 +30,13 @@ logger = logging.getLogger(__name__)
 # 상수
 SIGNAL_FILE = "trading_signals.xlsx"
 ALERT_HISTORY_FILE = "alert_history.json"
-MONITORING_START_TIME = time(8, 0)  # 08:00
-MONITORING_END_TIME = time(20, 0)   # 20:00
+MONITORING_START_TIME = time_type(8, 0)  # 08:00
+MONITORING_END_TIME = time_type(20, 0)   # 20:00
 DISTANCE_THRESHOLD = 5.0  # 5% 이내 접근 시 알람
 
 # 키움 API 설정
-KIWOOM_BASE_URL = "https://openapi.kiwoom.com/api/oauth2"
+KIWOOM_BASE_URL = "https://api.kiwoom.com"
+KIWOOM_TOKEN_URL = "https://api.kiwoom.com/oauth2/token"
 KIWOOM_TOKEN = None
 APPKEY = None
 SECRETKEY = None
@@ -45,23 +47,18 @@ def get_access_token(appkey: str, secretkey: str) -> Optional[str]:
     키움 API 접근 토큰 발급
     """
     try:
-        url = f"{KIWOOM_BASE_URL}/v1/token"
-        
+        headers = {"Content-Type": "application/json;charset=UTF-8"}
         body = {
             "grant_type": "client_credentials",
             "appkey": appkey,
-            "appsecret": secretkey
+            "secretkey": secretkey
         }
         
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        
-        response = requests.post(url, data=body, headers=headers, timeout=10)
+        response = requests.post(KIWOOM_TOKEN_URL, headers=headers, json=body, timeout=20)
         response.raise_for_status()
         
         result = response.json()
-        token = result.get("access_token")
+        token = result.get("token") or result.get("access_token")
         
         if token:
             logger.info("✓ 접근 토큰 발급 성공")
@@ -77,7 +74,7 @@ def get_access_token(appkey: str, secretkey: str) -> Optional[str]:
 
 def get_current_price(ticker: str, token: str) -> Optional[float]:
     """
-    현재가 조회 (호가 API 사용)
+    현재가 조회 (차트 API로 최신 데이터 조회)
     
     Args:
         ticker: 종목 코드
@@ -87,15 +84,23 @@ def get_current_price(ticker: str, token: str) -> Optional[float]:
         현재가 (실패 시 None)
     """
     try:
-        url = f"{KIWOOM_BASE_URL}/v1/domestic/ka10024"
+        url = f"{KIWOOM_BASE_URL}/api/dostk/chart"
         
         headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+            "authorization": f"Bearer {token}",
+            "Content-Type": "application/json;charset=UTF-8",
+            "api-id": "ka10081",
+            "cont-yn": "N",
+            "next-key": ""
         }
         
+        # 오늘 날짜
+        today = datetime.now().strftime("%Y%m%d")
+        
         body = {
-            "stk_cd": ticker
+            "stk_cd": ticker,
+            "base_dt": today,
+            "upd_stkpc_tp": "1"
         }
         
         response = requests.post(url, headers=headers, json=body, timeout=10)
@@ -103,25 +108,31 @@ def get_current_price(ticker: str, token: str) -> Optional[float]:
         
         result = response.json()
         
-        # 현재가 추출 (여러 필드 시도)
-        data = result.get("output", {})
+        # 데이터 추출
+        records = result.get("stk_dt_pole_chart_qry")
         
-        # 우선순위: cur_pric > stck_prpr > prpr
-        current_price = None
-        for key in ["cur_pric", "stck_prpr", "prpr", "price"]:
-            if key in data:
-                try:
-                    current_price = float(data[key])
-                    if current_price > 0:
-                        break
-                except (ValueError, TypeError):
-                    continue
-        
-        if current_price and current_price > 0:
-            return current_price
-        else:
+        if not records or len(records) == 0:
             logger.warning(f"⚠ {ticker}: 현재가 데이터 없음")
             return None
+        
+        # 가장 최근 데이터 (첫 번째 항목)
+        latest = records[0]
+        
+        # 현재가 추출 (첫 번째 키가 cur_pric)
+        # Note: 'cur_pric' in latest가 작동하지 않는 버그가 있어 직접 접근 사용
+        all_keys = list(latest.keys())
+        if len(all_keys) > 0:
+            first_key = all_keys[0]  # cur_pric
+            try:
+                current_price = float(str(latest[first_key]).replace(",", ""))
+                if current_price > 0:
+                    return current_price
+            except (ValueError, TypeError) as e:
+                logger.warning(f"⚠ {ticker}: 현재가 파싱 실패 ({e})")
+                return None
+        
+        logger.warning(f"⚠ {ticker}: 현재가 파싱 실패 (키 없음)")
+        return None
     
     except Exception as e:
         logger.error(f"✗ {ticker} 현재가 조회 실패: {e}")
@@ -141,11 +152,14 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
         DataFrame (날짜, 종가) 또는 None
     """
     try:
-        url = f"{KIWOOM_BASE_URL}/v1/domestic/ka10081"
+        url = f"{KIWOOM_BASE_URL}/api/dostk/chart"
         
         headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+            "authorization": f"Bearer {token}",
+            "Content-Type": "application/json;charset=UTF-8",
+            "api-id": "ka10081",
+            "cont-yn": "N",
+            "next-key": ""
         }
         
         # 오늘 날짜
@@ -161,23 +175,25 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
         response.raise_for_status()
         
         result = response.json()
-        output = result.get("output", [])
         
-        if not output:
+        # 데이터 추출
+        output = result.get("stk_dt_pole_chart_qry")
+        
+        if not output or len(output) == 0:
             logger.warning(f"⚠ {ticker}: 차트 데이터 없음")
             return None
         
         # DataFrame 생성
         records = []
         for item in output:
-            date_str = item.get("base_dt") or item.get("stck_bsop_date") or item.get("date")
+            date_str = item.get("dt") or item.get("stck_bsop_date") or item.get("bas_dd")
             
-            # 종가 추출 (우선순위: END_PRC > stck_clpr > close > cur_pric)
+            # 종가 추출 (우선순위: cur_pric > END_PRC > stck_clpr > close)
             close_price = None
-            for key in ["END_PRC", "stck_clpr", "close", "cur_pric"]:
+            for key in ["cur_pric", "END_PRC", "stck_clpr", "close"]:
                 if key in item:
                     try:
-                        close_price = float(item[key])
+                        close_price = float(str(item[key]).replace(",", ""))
                         if close_price > 0:
                             break
                     except (ValueError, TypeError):
@@ -541,6 +557,10 @@ def main():
             buy_status = row.get("매수상태", "NONE")
             
             logger.info(f"\n[{idx+1}/{len(df_summary)}] {stock_name} ({ticker}) 모니터링 중...")
+            
+            # API 호출 제한 방지 (0.5초 대기)
+            if idx > 0:
+                time.sleep(0.5)
             
             # 현재가 조회
             current_price = get_current_price(ticker, KIWOOM_TOKEN)
