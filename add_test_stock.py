@@ -17,7 +17,7 @@ def add_test_stocks(ticker_name_pairs):
         return
     
     # 기존 데이터 읽기
-    df = read_existing_data('output/turnover_universe.xlsx')
+    df = read_existing_data('turnover_universe.xlsx')
     print(f"📊 기존 종목: {len(df)}개")
     
     # 새 종목 추가
@@ -50,7 +50,7 @@ def add_test_stocks(ticker_name_pairs):
     
     # 저장
     if added:
-        save_to_excel('output/turnover_universe.xlsx', df, date.today().strftime("%Y-%m-%d"))
+        save_to_excel('turnover_universe.xlsx', df, date.today().strftime("%Y-%m-%d"))
         print(f"\n✅ 추가 완료: {', '.join(added)}")
     
     if skipped:

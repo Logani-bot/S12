@@ -45,7 +45,7 @@ python Daily_Turnover_Tracker.py --help
 
 ## 📊 출력 형식
 
-엑셀 파일(`output/turnover_universe.xlsx`)에 다음 형식으로 저장됩니다:
+엑셀 파일(`turnover_universe.xlsx`)에 다음 형식으로 저장됩니다:
 
 | 날짜       | 티커   | 종목명           | 거래대금(억) | 누적횟수 |
 |------------|--------|------------------|--------------|----------|
@@ -108,7 +108,7 @@ python Daily_Turnover_Tracker.py --appkey "YOUR_KEY" --secret "YOUR_SECRET"
 
 엑셀 파일에 직접 데이터를 추가할 수 있습니다:
 
-1. `output/turnover_universe.xlsx` 열기
+1. `turnover_universe.xlsx` 열기
 2. 마지막 행에 데이터 추가 (형식 맞춰서)
 3. 저장 후 스크립트 실행 → 자동으로 중복 제거 및 정렬
 
@@ -123,7 +123,7 @@ pip install requests pandas openpyxl
 - **`Daily_Turnover_Tracker.py`**: 메인 스크립트 (최적화 버전)
 - **`Run_Turnover_Universe.py`**: 구버전 (복잡한 로직 포함, 백업용)
 - **`test_past_rank_api.py`**: API 테스트 스크립트
-- **`output/turnover_universe.xlsx`**: 데이터 저장 파일
+- **`turnover_universe.xlsx`**: 데이터 저장 파일
 
 ## 🐛 문제 해결
 

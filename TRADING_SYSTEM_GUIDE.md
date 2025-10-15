@@ -26,9 +26,8 @@
 S12/
 ├── Daily_Turnover_Tracker.py     # 5천억+ 종목 추적 (매일 실행)
 ├── Trading_Signal_System.py      # 매매 시그널 생성 (매일 20시 10분)
-├── output/
-│   ├── turnover_universe.xlsx    # 유니버스 (5천억+ 종목 목록)
-│   └── trading_signals.xlsx      # 시그널 (Summary + History)
+├── turnover_universe.xlsx        # 유니버스 (5천억+ 종목 목록)
+├── trading_signals.xlsx          # 시그널 (Summary + History)
 ├── run_daily_tracker.bat         # 유니버스 자동 실행용
 └── README.md, COMPARISON.md      # 문서
 ```
@@ -48,7 +47,7 @@ python Daily_Turnover_Tracker.py --threshold 3000
 python Daily_Turnover_Tracker.py --out my_universe.xlsx
 ```
 
-**결과:** `output/turnover_universe.xlsx` 생성 (종목 목록)
+**결과:** `turnover_universe.xlsx` 생성 (종목 목록)
 
 ### 2단계: 시그널 생성 (매매 시그널 분석)
 
@@ -63,11 +62,11 @@ python Trading_Signal_System.py --alert-threshold 5
 python Trading_Signal_System.py --universe my_universe.xlsx --signal my_signals.xlsx
 ```
 
-**결과:** `output/trading_signals.xlsx` 생성 (Summary + History 탭)
+**결과:** `trading_signals.xlsx` 생성 (Summary + History 탭)
 
 ## 📊 엑셀 파일 구조
 
-### A. output/turnover_universe.xlsx (유니버스)
+### A. turnover_universe.xlsx (유니버스)
 
 | 날짜 | 티커 | 종목명 | 거래대금(억) | 누적횟수 |
 |------|------|--------|--------------|----------|
@@ -78,7 +77,7 @@ python Trading_Signal_System.py --universe my_universe.xlsx --signal my_signals.
 - **누적횟수 카운트** - 매일 5천억 이상이면 +1
 - **누적횟수 내림차순 정렬** - 강세 지속성 파악
 
-### B. output/trading_signals.xlsx - Summary 탭 (추적 중)
+### B. trading_signals.xlsx - Summary 탭 (추적 중)
 
 | 컬럼 | 설명 | 예시 |
 |------|------|------|
@@ -101,7 +100,7 @@ python Trading_Signal_System.py --universe my_universe.xlsx --signal my_signals.
 | **최고도달선** | 최고가 기록 | 51,000 |
 | **최종업데이트** | 마지막 분석 시각 | 2025-10-12 20:10:05 |
 
-### C. output/trading_signals.xlsx - History 탭 (완료)
+### C. trading_signals.xlsx - History 탭 (완료)
 
 Summary의 모든 컬럼 + 추가:
 - **종료일** - 매도 완료일
@@ -252,7 +251,7 @@ python Daily_Turnover_Tracker.py --threshold 10000
 ### 초기 설정
 1. 유니버스 생성: `python Daily_Turnover_Tracker.py`
 2. 시그널 생성: `python Trading_Signal_System.py`
-3. `output/trading_signals.xlsx` 열어서 확인
+3. `trading_signals.xlsx` 열어서 확인
 
 ### 매일 운영
 1. **장 시작 전 (8시 10분)**
@@ -273,7 +272,7 @@ python Daily_Turnover_Tracker.py --threshold 10000
 
 ### 매수 후 수량 입력 방법
 ```
-output/trading_signals.xlsx → Summary 탭
+trading_signals.xlsx → Summary 탭
 
 1차 매수 체결 후:
 - 1차매수량 셀에 직접 입력 (예: 100주)

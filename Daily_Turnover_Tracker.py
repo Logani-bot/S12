@@ -30,7 +30,7 @@ API_TOKEN_URL = "https://api.kiwoom.com/oauth2/token"
 API_RANK_ENDPOINT = "/api/dostk/rkinfo"
 API_RANK_ID = "ka10032"
 
-EXCEL_PATH = "output/turnover_universe.xlsx"
+EXCEL_PATH = "turnover_universe.xlsx"
 SHEET_NAME = "universe"
 
 THRESHOLD_EOK = 5000.0  # 5000억
