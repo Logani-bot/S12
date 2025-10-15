@@ -33,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 상수
-SIGNAL_FILE = "trading_signals.xlsx"
+SIGNAL_FILE = "output/trading_signals.xlsx"
 ALERT_HISTORY_FILE = "alert_history.json"
 MONITORING_START_TIME = time_type(8, 0)  # 08:00
 MONITORING_END_TIME = time_type(20, 0)   # 20:00
@@ -170,10 +170,14 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
         # 오늘 날짜
         today = datetime.now().strftime("%Y%m%d")
         
+        # KRX+NXT 통합 기준: 종목코드에 _AL 접미사 추가
+        integrated_ticker = f"{ticker}_AL"
+        
         body = {
-            "stk_cd": ticker,
+            "stk_cd": integrated_ticker,  # 통합 종목코드 사용
             "base_dt": today,
-            "upd_stkpc_tp": "1"
+            "upd_stkpc_tp": "1",  # 수정주가
+            "stex_tp": "3"  # 통합 (KRX+NXT)
         }
         
         response = requests.post(url, headers=headers, json=body, timeout=10)
@@ -235,10 +239,8 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
         return None
 
 
-def calculate_tick_unit(price: float) -> int:
-    """
-    가격대별 호가 단위 계산
-    """
+def get_tick_unit(price: float) -> int:
+    """주가별 호가 단위 반환"""
     if price < 1000:
         return 1
     elif price < 5000:
@@ -278,32 +280,45 @@ def calculate_dynamic_ma20_and_buy_lines(ticker: str, token: str, current_price:
             "dist_buy3": 3차 매수선 이격도(%)
         }
     """
-    # 과거 19일 데이터 조회
-    df_chart = fetch_chart_data(ticker, token, days=19)
+    # 과거 20일 데이터 조회 (Trading_Signal_System과 동일)
+    df_chart = fetch_chart_data(ticker, token, days=20)
     
-    if df_chart is None or len(df_chart) < 19:
-        logger.warning(f"⚠ {ticker}: 과거 데이터 부족 (19일 필요)")
+    if df_chart is None or len(df_chart) < 20:
+        logger.warning(f"⚠ {ticker}: 과거 데이터 부족 (20일 필요)")
         return None
     
-    # 과거 19일 종가 + 오늘 현재가
-    past_19_closes = df_chart["종가"].tolist()
-    all_20_closes = past_19_closes + [current_price]
-    
-    # 20일 이동평균
-    ma20 = sum(all_20_closes) / 20
+    # 과거 20일 종가의 평균 (Trading_Signal_System과 동일한 방식)
+    past_20_closes = df_chart["종가"].tolist()
+    ma20 = sum(past_20_closes) / 20
     
     # -20% 엔벨로프 지지선
     envelope = ma20 * 0.8
     
-    # 1차 매수선: 엔벨로프 + 1틱
-    tick = calculate_tick_unit(envelope)
-    buy1 = envelope + tick
+    # 1차 매수선: 엔벨로프 + 1호가 (호가단위 올림)
+    tick = get_tick_unit(envelope)
+    remainder = envelope % tick
+    if remainder > 0:
+        buy1 = envelope + (tick - remainder)
+    else:
+        buy1 = envelope + tick
     
-    # 2차 매수선: 1차에서 -10%
-    buy2 = buy1 * 0.9
+    # 2차 매수선: 1차에서 10% 하락 후 1호가 위로 조정
+    base_buy2 = buy1 * 0.9  # 10% 하락
+    tick_buy2 = get_tick_unit(base_buy2)
+    remainder_buy2 = base_buy2 % tick_buy2
+    if remainder_buy2 > 0:
+        buy2 = base_buy2 + (tick_buy2 - remainder_buy2)
+    else:
+        buy2 = base_buy2 + tick_buy2
     
-    # 3차 매수선: 2차에서 -10%
-    buy3 = buy2 * 0.9
+    # 3차 매수선: 2차에서 10% 하락 후 1호가 위로 조정
+    base_buy3 = buy2 * 0.9  # 10% 하락
+    tick_buy3 = get_tick_unit(base_buy3)
+    remainder_buy3 = base_buy3 % tick_buy3
+    if remainder_buy3 > 0:
+        buy3 = base_buy3 + (tick_buy3 - remainder_buy3)
+    else:
+        buy3 = base_buy3 + tick_buy3
     
     # 이격도 계산
     dist_buy1 = ((current_price - buy1) / buy1) * 100

@@ -41,8 +41,8 @@ API_CHART_ENDPOINT = "/api/dostk/chart"
 API_CHART_ID = "ka10081"
 
 # 기본 파일 경로
-DEFAULT_UNIVERSE_FILE = "turnover_universe.xlsx"
-DEFAULT_SIGNAL_FILE = "trading_signals.xlsx"
+DEFAULT_UNIVERSE_FILE = "output/turnover_universe.xlsx"
+DEFAULT_SIGNAL_FILE = "output/trading_signals.xlsx"
 DEFAULT_ALERT_THRESHOLD = 10.0  # 알람 임계값 (%)
 
 # 매수선 간격 (%)
@@ -224,21 +224,41 @@ def calculate_buy_line_1(envelope: float, price: float) -> float:
     if envelope is None:
         return None
     tick = get_tick_unit(envelope)
-    return envelope + tick
+    remainder = envelope % tick
+    if remainder > 0:
+        return envelope + (tick - remainder)
+    else:
+        return envelope + tick
 
 
 def calculate_buy_line_2(buy1: float) -> float:
-    """2차 매수선: 1차 매수선에서 10% 하락"""
+    """2차 매수선: 1차 매수선에서 10% 하락 후 1호가 위로 조정"""
     if buy1 is None:
         return None
-    return buy1 * (1 - BUY_LEVEL_GAP / 100)
+    # 1차 매수선에서 10% 하락
+    base_price = buy1 * (1 - BUY_LEVEL_GAP / 100)
+    # 1호가 위로 조정 (호가 단위에 맞게 올림)
+    tick = get_tick_unit(base_price)
+    remainder = base_price % tick
+    if remainder > 0:
+        return base_price + (tick - remainder)
+    else:
+        return base_price + tick
 
 
 def calculate_buy_line_3(buy2: float) -> float:
-    """3차 매수선: 2차 매수선에서 10% 하락"""
+    """3차 매수선: 2차 매수선에서 10% 하락 후 1호가 위로 조정"""
     if buy2 is None:
         return None
-    return buy2 * (1 - BUY_LEVEL_GAP / 100)
+    # 2차 매수선에서 10% 하락
+    base_price = buy2 * (1 - BUY_LEVEL_GAP / 100)
+    # 1호가 위로 조정 (호가 단위에 맞게 올림)
+    tick = get_tick_unit(base_price)
+    remainder = base_price % tick
+    if remainder > 0:
+        return base_price + (tick - remainder)
+    else:
+        return base_price + tick
 
 
 def calculate_distance_pct(current: float, target: float) -> float:
