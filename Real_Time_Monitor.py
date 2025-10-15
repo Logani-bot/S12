@@ -20,10 +20,15 @@ import argparse
 import time
 
 # 로깅 설정
+log_filename = f"realtime_monitor_{datetime.now().strftime('%Y%m%d')}.log"
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(log_filename, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -186,24 +191,30 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
         # DataFrame 생성
         records = []
         for item in output:
-            date_str = item.get("dt") or item.get("stck_bsop_date") or item.get("bas_dd")
-            
-            # 종가 추출 (우선순위: cur_pric > END_PRC > stck_clpr > close)
+            # 날짜 추출 (첫 번째 키에서 4번째 키가 dt)
+            item_keys = list(item.keys())
+            date_str = None
             close_price = None
-            for key in ["cur_pric", "END_PRC", "stck_clpr", "close"]:
-                if key in item:
-                    try:
-                        close_price = float(str(item[key]).replace(",", ""))
-                        if close_price > 0:
-                            break
-                    except (ValueError, TypeError):
-                        continue
             
-            if date_str and close_price:
-                records.append({
-                    "날짜": pd.to_datetime(date_str, format="%Y%m%d"),
-                    "종가": close_price
-                })
+            # 날짜는 보통 4번째 키 (dt)
+            if len(item_keys) > 3:
+                date_str = item[item_keys[3]]  # dt
+            
+            # 종가는 첫 번째 키 (cur_pric)
+            if len(item_keys) > 0:
+                try:
+                    close_price = float(str(item[item_keys[0]]).replace(",", ""))
+                except (ValueError, TypeError):
+                    pass
+            
+            if date_str and close_price and close_price > 0:
+                try:
+                    records.append({
+                        "날짜": pd.to_datetime(date_str, format="%Y%m%d"),
+                        "종가": close_price
+                    })
+                except:
+                    pass
         
         if not records:
             logger.warning(f"⚠ {ticker}: 유효한 차트 데이터 없음")
@@ -433,7 +444,7 @@ def check_and_send_alert(
                     current_price=current_price,
                     target_price=buy_lines["buy1"],
                     distance_pct=dist_buy1,
-                    recipients=["me"]
+                    recipients=["all"]
                 )
                 
                 # 히스토리 업데이트
@@ -460,7 +471,7 @@ def check_and_send_alert(
                     current_price=current_price,
                     target_price=buy_lines["buy2"],
                     distance_pct=dist_buy2,
-                    recipients=["me"]
+                    recipients=["all"]
                 )
                 
                 ticker_alerts[alert_key] = True
@@ -486,7 +497,7 @@ def check_and_send_alert(
                     current_price=current_price,
                     target_price=buy_lines["buy3"],
                     distance_pct=dist_buy3,
-                    recipients=["me"]
+                    recipients=["all"]
                 )
                 
                 ticker_alerts[alert_key] = True
@@ -508,42 +519,25 @@ def is_monitoring_time() -> bool:
     return MONITORING_START_TIME <= now <= MONITORING_END_TIME
 
 
-def main():
+def run_monitoring_cycle():
     """
-    메인 함수
+    1회 모니터링 사이클 실행
     """
-    global APPKEY, SECRETKEY, KIWOOM_TOKEN
-    
-    # 인자 파싱
-    parser = argparse.ArgumentParser(description="실시간 주식 모니터링")
-    parser.add_argument("--appkey", required=True, help="키움 APPKEY")
-    parser.add_argument("--secret", required=True, help="키움 SECRETKEY")
-    args = parser.parse_args()
-    
-    APPKEY = args.appkey
-    SECRETKEY = args.secret
-    
-    logger.info("=" * 80)
-    logger.info("🔍 실시간 주식 모니터링 시작")
-    logger.info("=" * 80)
-    
-    # 모니터링 시간대 체크
-    if not is_monitoring_time():
-        logger.info("ℹ 모니터링 시간대가 아닙니다 (08:00-20:00)")
-        return
+    global KIWOOM_TOKEN
     
     try:
-        # 1. 접근 토큰 발급
-        KIWOOM_TOKEN = get_access_token(APPKEY, SECRETKEY)
+        # 1. 접근 토큰 발급 (또는 재사용)
         if not KIWOOM_TOKEN:
-            logger.error("✗ 토큰 발급 실패로 종료")
-            return
+            KIWOOM_TOKEN = get_access_token(APPKEY, SECRETKEY)
+            if not KIWOOM_TOKEN:
+                logger.error("✗ 토큰 발급 실패")
+                return False
         
         # 2. Summary 종목 로드
         df_summary = load_summary_stocks()
         if df_summary.empty:
             logger.info("ℹ 모니터링 대상 종목이 없습니다.")
-            return
+            return True
         
         # 3. 알람 히스토리 로드
         alert_history = load_alert_history()
@@ -586,16 +580,82 @@ def main():
                 alert_count += 1
         
         logger.info("\n" + "=" * 80)
-        logger.info("✓ 모니터링 완료")
+        logger.info("✓ 모니터링 사이클 완료")
         logger.info(f"  모니터링 종목: {len(df_summary)}개")
         logger.info(f"  전송 알람: {alert_count}개")
         logger.info("=" * 80)
+        
+        return True
     
     except Exception as e:
         logger.error(f"✗ 시스템 오류: {e}")
         
-        from telegram_notifier import send_error_alert
-        send_error_alert(str(e), "Real_Time_Monitor", recipients=["me"])
+        try:
+            from telegram_notifier import send_error_alert
+            send_error_alert(str(e), "Real_Time_Monitor", recipients=["me"])  # 에러는 본인만
+        except:
+            pass
+        
+        return False
+
+
+def main():
+    """
+    메인 함수 - 10분 간격 반복 실행
+    """
+    global APPKEY, SECRETKEY, KIWOOM_TOKEN
+    
+    # 인자 파싱
+    parser = argparse.ArgumentParser(description="실시간 주식 모니터링 (10분 간격)")
+    parser.add_argument("--appkey", required=True, help="키움 APPKEY")
+    parser.add_argument("--secret", required=True, help="키움 SECRETKEY")
+    parser.add_argument("--interval", type=int, default=10, help="모니터링 간격 (분, 기본값: 10)")
+    args = parser.parse_args()
+    
+    APPKEY = args.appkey
+    SECRETKEY = args.secret
+    interval_minutes = args.interval
+    
+    logger.info("=" * 80)
+    logger.info("🔍 실시간 주식 모니터링 시작")
+    logger.info(f"⏰ 모니터링 간격: {interval_minutes}분")
+    logger.info(f"🕐 모니터링 시간: 08:00-20:00")
+    logger.info("=" * 80)
+    
+    # 무한 루프 - 10분마다 실행
+    cycle_count = 0
+    
+    while True:
+        cycle_count += 1
+        
+        # 모니터링 시간대 체크
+        if not is_monitoring_time():
+            logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (08:00-20:00)")
+            logger.info(f"⏰ {interval_minutes}분 후 재확인...")
+            time.sleep(interval_minutes * 60)
+            continue
+        
+        logger.info(f"\n{'=' * 80}")
+        logger.info(f"[사이클 {cycle_count}] {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"{'=' * 80}")
+        
+        # 모니터링 실행
+        success = run_monitoring_cycle()
+        
+        if not success:
+            logger.warning("⚠ 모니터링 실패, 재시도...")
+        
+        # 다음 실행까지 대기
+        logger.info(f"\n⏰ {interval_minutes}분 후 다음 사이클 실행...")
+        logger.info(f"   종료하려면 Ctrl+C를 누르세요.")
+        
+        try:
+            time.sleep(interval_minutes * 60)
+        except KeyboardInterrupt:
+            logger.info("\n" + "=" * 80)
+            logger.info("🛑 사용자가 모니터링을 중지했습니다.")
+            logger.info("=" * 80)
+            break
 
 
 if __name__ == "__main__":

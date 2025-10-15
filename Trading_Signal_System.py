@@ -105,9 +105,12 @@ def get_api_token(appkey: str, secret: str, max_retry: int = 3) -> str:
 
 
 def fetch_chart_data(token: str, ticker: str, days: int = 60, max_retry: int = 5) -> pd.DataFrame:
-    """차트 데이터 조회 (60일치)"""
+    """차트 데이터 조회 (60일치) - KRX+NXT 통합 기준"""
     # ⭐ 키움 챗봇 권장: base_dt만 사용 (해당 날짜 이전 데이터 조회)
     base_date = datetime.now().strftime("%Y%m%d")
+    
+    # ⭐ KRX+NXT 통합 기준: 종목코드에 _AL 접미사 추가
+    integrated_ticker = f"{ticker}_AL"
     
     headers = {
         "authorization": f"Bearer {token}",
@@ -118,9 +121,10 @@ def fetch_chart_data(token: str, ticker: str, days: int = 60, max_retry: int = 5
     }
     
     body = {
-        "stk_cd": ticker,
+        "stk_cd": integrated_ticker,  # 통합 종목코드 사용
         "base_dt": base_date,  # 오늘 날짜만 (end_dt 제거!)
-        "upd_stkpc_tp": "1"  # 수정주가
+        "upd_stkpc_tp": "1",  # 수정주가
+        "stex_tp": "3"  # 통합 (KRX+NXT)
     }
     
     url = API_BASE_URL + API_CHART_ENDPOINT
@@ -343,7 +347,7 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
     logger.info(f"  매수선: 1차 {buy1:,.0f}, 2차 {buy2:,.0f}, 3차 {buy3:,.0f}")
     
     # 기존 데이터 확인
-    existing = df_summary[df_summary["티커"] == ticker]
+    existing = df_summary[df_summary["티커"] == ticker] if not df_summary.empty and "티커" in df_summary.columns else pd.DataFrame()
     
     if existing.empty:
         # 신규 종목
@@ -898,8 +902,8 @@ def main():
             # 9. 텔레그램 일일 리포트 전송
             if TELEGRAM_AVAILABLE:
                 try:
-                    # 기본값: 본인에게만 (원하면 ["all"]로 변경 가능)
-                    send_daily_report(alerts, len(df_summary), recipients=["me"])
+                    # 모든 사람에게 전송
+                    send_daily_report(alerts, len(df_summary), recipients=["all"])
                     logger.info("✓ 텔레그램 일일 리포트 전송 완료")
                 except Exception as e:
                     logger.error(f"텔레그램 전송 실패: {e}")
