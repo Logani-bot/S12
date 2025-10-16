@@ -884,14 +884,16 @@ def main():
 
             time.sleep(0.2)  # API 레이트 리미트
 
-        # 5. Summary 업데이트 (Universe에 없는 기존 종목 유지 + 새 분석 결과)
+        # 5. Summary 업데이트 (중복 제거 후 업데이트)
         if results:
             df_new = pd.DataFrame(results)
 
-            # Universe에 없지만 Summary에 있는 종목 (과거 매수했던 종목들)
             if not df_summary.empty:
-                df_keep = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
-                df_summary = pd.concat([df_new, df_keep], ignore_index=True)
+                # 기존 Summary에서 이번에 분석한 종목들 제거 (중복 방지)
+                df_summary = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
+                
+                # 새 분석 결과와 기존 종목들 합치기
+                df_summary = pd.concat([df_summary, df_new], ignore_index=True)
             else:
                 df_summary = df_new
 
