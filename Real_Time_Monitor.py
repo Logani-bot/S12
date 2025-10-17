@@ -202,20 +202,13 @@ def get_enhanced_price_data(ticker: str, token: str) -> Optional[Dict]:
         # 가장 최근 데이터 (첫 번째 항목)
         latest = records[0]
         
-        # 모든 키 추출 (cur_pric, stck_lwpr, stck_hgpr, stck_oprc, acml_vol 순서)
-        all_keys = list(latest.keys())
-        
+        # 명시적 키 이름으로 직접 접근 (올바른 매핑)
         data = {}
-        if len(all_keys) > 0:
-            data['current'] = float(str(latest[all_keys[0]]).replace(",", ""))  # cur_pric
-        if len(all_keys) > 1:
-            data['low'] = float(str(latest[all_keys[1]]).replace(",", ""))     # stck_lwpr
-        if len(all_keys) > 2:
-            data['high'] = float(str(latest[all_keys[2]]).replace(",", ""))    # stck_hgpr
-        if len(all_keys) > 3:
-            data['open'] = float(str(latest[all_keys[3]]).replace(",", ""))    # stck_oprc
-        if len(all_keys) > 4:
-            data['volume'] = int(str(latest[all_keys[4]]).replace(",", ""))    # acml_vol
+        data['current'] = float(str(latest.get('cur_prc', 0)).replace(",", ""))    # 현재가
+        data['low'] = float(str(latest.get('low_pric', 0)).replace(",", ""))       # 저가
+        data['high'] = float(str(latest.get('high_pric', 0)).replace(",", ""))     # 고가
+        data['open'] = float(str(latest.get('open_pric', 0)).replace(",", ""))     # 시가
+        data['volume'] = int(str(latest.get('trde_qty', 0)).replace(",", ""))      # 거래량
         
         # 필수 데이터 확인
         if 'current' not in data or data['current'] <= 0:
@@ -627,55 +620,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯 {stock_name} ({ticker}): 1차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 5% 이내 접근한 경우
-        elif 0 < low_dist_buy1 <= 5.0:
-            alert_key = "READY_BUY1_5%"
-            alert_type = "1차 매수선 5% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    target_price=buy_lines["buy1"],
-                    distance_pct=low_dist_buy1,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟡 {stock_name} ({ticker}): 1차 매수선 저가 기준 5% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 3% 이내 접근한 경우
-        elif 0 < low_dist_buy1 <= 3.0:
-            alert_key = "READY_BUY1_3%"
-            alert_type = "1차 매수선 3% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    target_price=buy_lines["buy1"],
-                    distance_pct=low_dist_buy1,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟠 {stock_name} ({ticker}): 1차 매수선 저가 기준 3% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 1% 이내 접근한 경우
+        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
         elif 0 < low_dist_buy1 <= 1.0:
             alert_key = "READY_BUY1_1%"
             alert_type = "1차 매수선 1% 인접"
@@ -697,6 +642,58 @@ def check_and_send_realtime_alert(
                 save_alert_history(history)
                 
                 logger.info(f"🔴 {stock_name} ({ticker}): 1차 매수선 저가 기준 1% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 3% 이내 접근한 경우 (1% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy1 <= 3.0:
+            alert_key = "READY_BUY1_3%"
+            alert_type = "1차 매수선 3% 인접"
+            
+            # 1% 알림이 없었던 경우만 3% 알림 전송
+            if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY1_1%", False):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy_lines["buy1"],
+                    distance_pct=low_dist_buy1,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟠 {stock_name} ({ticker}): 1차 매수선 저가 기준 3% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 5% 이내 접근한 경우 (1%, 3% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy1 <= 5.0:
+            alert_key = "READY_BUY1_5%"
+            alert_type = "1차 매수선 5% 인접"
+            
+            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
+            if (not ticker_alerts.get(alert_key, False) and 
+                not ticker_alerts.get("READY_BUY1_1%", False) and 
+                not ticker_alerts.get("READY_BUY1_3%", False)):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy_lines["buy1"],
+                    distance_pct=low_dist_buy1,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟡 {stock_name} ({ticker}): 1차 매수선 저가 기준 5% 인접 알람 전송")
                 return True
     
     # 2차 매수선 저가 기준 이격도 계산 (BOUGHT_1 상태일 때만)
@@ -728,57 +725,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯 {stock_name} ({ticker}): 2차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 5% 이내 접근한 경우
-        elif 0 < low_dist_buy2 <= 5.0:
-            alert_key = "READY_BUY2_5%"
-            alert_type = "2차 매수선 5% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    low_price=low_price,
-                    target_price=buy_lines["buy2"],
-                    distance_pct=low_dist_buy2,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟡 {stock_name} ({ticker}): 2차 매수선 저가 기준 5% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 3% 이내 접근한 경우
-        elif 0 < low_dist_buy2 <= 3.0:
-            alert_key = "READY_BUY2_3%"
-            alert_type = "2차 매수선 3% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    low_price=low_price,
-                    target_price=buy_lines["buy2"],
-                    distance_pct=low_dist_buy2,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟠 {stock_name} ({ticker}): 2차 매수선 저가 기준 3% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 1% 이내 접근한 경우
+        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
         elif 0 < low_dist_buy2 <= 1.0:
             alert_key = "READY_BUY2_1%"
             alert_type = "2차 매수선 1% 인접"
@@ -801,6 +748,60 @@ def check_and_send_realtime_alert(
                 save_alert_history(history)
                 
                 logger.info(f"🔴 {stock_name} ({ticker}): 2차 매수선 저가 기준 1% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 3% 이내 접근한 경우 (1% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy2 <= 3.0:
+            alert_key = "READY_BUY2_3%"
+            alert_type = "2차 매수선 3% 인접"
+            
+            # 1% 알림이 없었던 경우만 3% 알림 전송
+            if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY2_1%", False):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    low_price=low_price,
+                    target_price=buy_lines["buy2"],
+                    distance_pct=low_dist_buy2,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟠 {stock_name} ({ticker}): 2차 매수선 저가 기준 3% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 5% 이내 접근한 경우 (1%, 3% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy2 <= 5.0:
+            alert_key = "READY_BUY2_5%"
+            alert_type = "2차 매수선 5% 인접"
+            
+            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
+            if (not ticker_alerts.get(alert_key, False) and 
+                not ticker_alerts.get("READY_BUY2_1%", False) and 
+                not ticker_alerts.get("READY_BUY2_3%", False)):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    low_price=low_price,
+                    target_price=buy_lines["buy2"],
+                    distance_pct=low_dist_buy2,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟡 {stock_name} ({ticker}): 2차 매수선 저가 기준 5% 인접 알람 전송")
                 return True
     
     # 3차 매수선 저가 기준 이격도 계산 (BOUGHT_2 상태일 때만)
@@ -832,57 +833,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯🎯 {stock_name} ({ticker}): 3차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 5% 이내 접근한 경우
-        elif 0 < low_dist_buy3 <= 5.0:
-            alert_key = "READY_BUY3_5%"
-            alert_type = "3차 매수선 5% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    low_price=low_price,
-                    target_price=buy_lines["buy3"],
-                    distance_pct=low_dist_buy3,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟡 {stock_name} ({ticker}): 3차 매수선 저가 기준 5% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 3% 이내 접근한 경우
-        elif 0 < low_dist_buy3 <= 3.0:
-            alert_key = "READY_BUY3_3%"
-            alert_type = "3차 매수선 3% 인접"
-            
-            if not ticker_alerts.get(alert_key, False):
-                send_realtime_alert(
-                    alert_type=alert_type,
-                    stock_name=stock_name,
-                    ticker=ticker,
-                    current_price=current_price,
-                    low_price=low_price,
-                    target_price=buy_lines["buy3"],
-                    distance_pct=low_dist_buy3,
-                    recipients=["all"]
-                )
-                
-                ticker_alerts[alert_key] = True
-                alerts[ticker] = ticker_alerts
-                history["alerts"] = alerts
-                save_alert_history(history)
-                
-                logger.info(f"🟠 {stock_name} ({ticker}): 3차 매수선 저가 기준 3% 인접 알람 전송")
-                return True
-        
-        # 저가가 매수선 1% 이내 접근한 경우
+        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
         elif 0 < low_dist_buy3 <= 1.0:
             alert_key = "READY_BUY3_1%"
             alert_type = "3차 매수선 1% 인접"
@@ -905,6 +856,60 @@ def check_and_send_realtime_alert(
                 save_alert_history(history)
                 
                 logger.info(f"🔴 {stock_name} ({ticker}): 3차 매수선 저가 기준 1% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 3% 이내 접근한 경우 (1% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy3 <= 3.0:
+            alert_key = "READY_BUY3_3%"
+            alert_type = "3차 매수선 3% 인접"
+            
+            # 1% 알림이 없었던 경우만 3% 알림 전송
+            if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY3_1%", False):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    low_price=low_price,
+                    target_price=buy_lines["buy3"],
+                    distance_pct=low_dist_buy3,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟠 {stock_name} ({ticker}): 3차 매수선 저가 기준 3% 인접 알람 전송")
+                return True
+        
+        # 저가가 매수선 5% 이내 접근한 경우 (1%, 3% 알림이 없었던 경우만)
+        elif 0 < low_dist_buy3 <= 5.0:
+            alert_key = "READY_BUY3_5%"
+            alert_type = "3차 매수선 5% 인접"
+            
+            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
+            if (not ticker_alerts.get(alert_key, False) and 
+                not ticker_alerts.get("READY_BUY3_1%", False) and 
+                not ticker_alerts.get("READY_BUY3_3%", False)):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    low_price=low_price,
+                    target_price=buy_lines["buy3"],
+                    distance_pct=low_dist_buy3,
+                    recipients=["all"]
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                logger.info(f"🟡 {stock_name} ({ticker}): 3차 매수선 저가 기준 5% 인접 알람 전송")
                 return True
     
     return False
