@@ -537,3 +537,4 @@ for i, ticker in enumerate(EXPANDED_STOCKS[:20]):
     print(f"  {i+1:2d}. {ticker}")
 
 print(f"\n이제 {len(EXPANDED_STOCKS)}개 종목을 체크해서 시총 1.5조 이상인 종목들을 찾을 수 있습니다.")
+

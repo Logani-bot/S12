@@ -73,3 +73,4 @@ def check_data_structure():
 
 if __name__ == "__main__":
     check_data_structure()
+

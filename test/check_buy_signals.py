@@ -48,3 +48,4 @@ def check_buy_signals():
 
 if __name__ == "__main__":
     check_buy_signals()
+

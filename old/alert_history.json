@@ -1,0 +1,11 @@
+{
+  "date": "2025-10-17",
+  "alerts": {
+    "277810": {
+      "READY_BUY1_5%": true
+    },
+    "004370": {
+      "BUY1_PRICE_REACHED": true
+    }
+  }
+}

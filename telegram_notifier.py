@@ -119,9 +119,12 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
         elif "READY_SELL" in status:
             ready_sell.append(alert)
     
-    # 1차 매수 접근 중 (10% 이내)
+    # 1차 매수 접근 중 (10% 이내) - 이격도 낮은 순으로 정렬
     if ready_buy1:
         message += f"🟡 <b>1차 매수 접근 중</b> ({len(ready_buy1)}개)\n"
+        
+        # 이격도 낮은 순으로 정렬
+        ready_buy1.sort(key=lambda x: x.get("1차매수선이격도(%)", 999))
         
         for stock in ready_buy1:
             name = stock.get("종목명", "")
@@ -136,9 +139,12 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
         
         message += "\n"
     
-    # 매수 완료 종목
+    # 매수 완료 종목 - 수익률 높은 순으로 정렬
     if bought_stocks:
         message += f"🔴 <b>매수 완료 종목</b> ({len(bought_stocks)}개)\n"
+        
+        # 수익률 높은 순으로 정렬
+        bought_stocks.sort(key=lambda x: ((x.get("종가", 0) - x.get("평균매수가", 0)) / x.get("평균매수가", 1)) * 100 if x.get("평균매수가", 0) else -999, reverse=True)
         
         for stock in bought_stocks:
             name = stock.get("종목명", "")
@@ -158,9 +164,16 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
         
         message += "\n"
     
-    # 매도선 접근
+    # 매도선 접근 - 이격도 낮은 순으로 정렬
     if ready_sell:
         message += f"🟢 <b>매도선 접근</b> ({len(ready_sell)}개)\n"
+        
+        # 이격도 낮은 순으로 정렬
+        ready_sell.sort(key=lambda x: min(
+            abs(x.get("1차매도선이격도(%)", 999)),
+            abs(x.get("2차매도선이격도(%)", 999)),
+            abs(x.get("3차매도선이격도(%)", 999))
+        ))
         
         for stock in ready_sell:
             name = stock.get("종목명", "")

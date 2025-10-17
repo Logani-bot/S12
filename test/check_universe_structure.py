@@ -40,3 +40,4 @@ def check_universe_structure():
 
 if __name__ == "__main__":
     check_universe_structure()
+

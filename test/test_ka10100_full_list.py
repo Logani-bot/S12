@@ -94,3 +94,4 @@ def test_ka10100_stock_list():
 
 if __name__ == '__main__':
     test_ka10100_stock_list()
+

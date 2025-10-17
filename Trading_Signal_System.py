@@ -41,8 +41,8 @@ API_CHART_ENDPOINT = "/api/dostk/chart"
 API_CHART_ID = "ka10081"
 
 # 기본 파일 경로
-DEFAULT_UNIVERSE_FILE = "turnover_universe.xlsx"
-DEFAULT_SIGNAL_FILE = "trading_signals.xlsx"
+DEFAULT_UNIVERSE_FILE = "output/turnover_universe.xlsx"
+DEFAULT_SIGNAL_FILE = "output/trading_signals.xlsx"
 DEFAULT_ALERT_THRESHOLD = 10.0  # 알람 임계값 (%)
 
 # 매수선 간격 (%)
@@ -228,24 +228,36 @@ def calculate_buy_line_1(envelope: float, price: float) -> float:
 
 
 def calculate_buy_line_2(buy1: float) -> float:
-    """2차 매수선: 1차 매수선에서 10% 하락"""
+    """2차 매수선: 1차 매수선에서 10% 하락 + 1틱"""
     if buy1 is None:
         return None
-    return buy1 * (1 - BUY_LEVEL_GAP / 100)
+    base_price = buy1 * (1 - BUY_LEVEL_GAP / 100)
+    tick = get_tick_unit(base_price)
+    return base_price + tick
 
 
 def calculate_buy_line_3(buy2: float) -> float:
-    """3차 매수선: 2차 매수선에서 10% 하락"""
+    """3차 매수선: 2차 매수선에서 10% 하락 + 1틱"""
     if buy2 is None:
         return None
-    return buy2 * (1 - BUY_LEVEL_GAP / 100)
+    base_price = buy2 * (1 - BUY_LEVEL_GAP / 100)
+    tick = get_tick_unit(base_price)
+    return base_price + tick
 
 
 def calculate_distance_pct(current: float, target: float) -> float:
-    """이격도 계산 (%)"""
+    """이격도 계산 (%) - 부동소수점 오차 보정"""
     if current is None or target is None or target == 0:
         return None
-    return ((current - target) / target) * 100
+    
+    # 부동소수점 오차 보정 (매우 작은 값은 0으로 처리)
+    distance_pct = ((current - target) / target) * 100
+    
+    # 절댓값이 1e-10보다 작으면 0으로 처리 (극소값 제거)
+    if abs(distance_pct) < 1e-10:
+        return 0.0
+    
+    return distance_pct
 
 
 # ==================== 매수/매도 로직 ====================
@@ -623,15 +635,11 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
                     cell.number_format = '#,##0'
                     cell.alignment = Alignment(horizontal="right", vertical="center")
             
-            # 이격도 포맷 (% 포맷)
+            # 이격도 포맷 (% 기호 포함)
             elif header in pct_cols:
                 if cell.value is not None and cell.value != "":
-                    # 값을 100으로 나눠서 실제 % 값으로 변환
-                    try:
-                        cell.value = float(cell.value) / 100
-                    except:
-                        pass
-                    cell.number_format = '0.00%'
+                    # 이미 % 값이므로 % 기호만 추가
+                    cell.number_format = '0.00"%"'
                     cell.alignment = Alignment(horizontal="center", vertical="center")
             
             # 날짜 포맷
@@ -831,83 +839,77 @@ def main():
                 logger.warning(f"기존 시그널 로드 실패 (새로 생성): {e}")
         
         # 4. 종목별 분석
-            logger.info("\n" + "=" * 80)
-            logger.info("종목별 분석 시작")
-            logger.info("=" * 80)
-    
-            results = []
-            alerts = []
-            analyzed_tickers = set()
-    
-            for idx, row in df_universe.iterrows():
-                ticker = str(row["티커"]).zfill(6)
-                name = row["종목명"]
-                recent_leading_date = row.get("최근주도주")  # ⭐ 최근 주도주 날짜 (재등장 시점)
-        
-                logger.info(f"\n[{idx + 1}/{len(df_universe)}] {name} ({ticker}) 분석 중...")
-        
-                # History에 이미 있는 종목이 재등장한 경우 (History는 유지, Summary만 신규 추가)
-                if not df_history.empty and ticker in df_history["티커"].values:
-                    logger.info(f"  ♻️ 과거 매매 기록 있음 - 새 사이클 시작")
-        
-                result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
-        
-                # 첫 주도주 날짜 추가
-                if result:
-                    # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
+        logger.info("\n" + "=" * 80)
+        logger.info("종목별 분석 시작")
+        logger.info("=" * 80)
+
+        results = []
+        alerts = []
+        analyzed_tickers = set()
+
+        for idx, row in df_universe.iterrows():
+            ticker = str(row["티커"]).zfill(6)
+            name = row["종목명"]
+            recent_leading_date = row.get("최근주도주")  # ⭐ 최근 주도주 날짜 (재등장 시점)
+
+            logger.info(f"\n[{idx + 1}/{len(df_universe)}] {name} ({ticker}) 분석 중...")
+
+            # History에 이미 있는 종목이 재등장한 경우 (History는 유지, Summary만 신규 추가)
+            if not df_history.empty and ticker in df_history["티커"].values:
+                logger.info(f"  ♻️ 과거 매매 기록 있음 - 새 사이클 시작")
+
+            result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
+
+            # 첫 주도주 날짜 추가
+            if result:
+                # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
+                if not df_summary.empty and "티커" in df_summary.columns:
                     existing = df_summary[df_summary["티커"] == ticker]
                     if not existing.empty and "첫주도주" in existing.columns:
                         result["첫주도주"] = existing["첫주도주"].values[0]
-                    # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
-                    elif recent_leading_date:
-                        result["첫주도주"] = recent_leading_date
+                # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
+                elif recent_leading_date:
+                    result["첫주도주"] = recent_leading_date
+
+            if result:
+                results.append(result)
+                analyzed_tickers.add(ticker)
         
-                if result:
-                    results.append(result)
-                    analyzed_tickers.add(ticker)
-            
-                    # 알람 대상 확인
-                    alert_status = result["알람상태"]
-                    if alert_status not in [AlertStatus.WATCHING, AlertStatus.WAITING]:
-                        alerts.append(result)
-                        logger.info(f"  🔔 {result['상태메시지']}")
-        
-                time.sleep(0.2)  # API 레이트 리미트
+                # 알람 대상 확인
+                alert_status = result["알람상태"]
+                if alert_status not in [AlertStatus.WATCHING, AlertStatus.WAITING]:
+                    alerts.append(result)
+                    logger.info(f"  🔔 {result['상태메시지']}")
+
+            time.sleep(0.2)  # API 레이트 리미트
     
-            # 5. Summary 업데이트 (Universe에 없는 기존 종목 유지 + 새 분석 결과)
-            if results:
-                df_new = pd.DataFrame(results)
-        
-                # Universe에 없지만 Summary에 있는 종목 (과거 매수했던 종목들)
-                if not df_summary.empty:
-                    df_keep = df_summary[~df_summary["티커"].isin(analyzed_tickers)]
-                    df_summary = pd.concat([df_new, df_keep], ignore_index=True)
-                else:
-                    df_summary = df_new
-    
-            # 6. SOLD 종목 History로 이동
-            df_summary, df_history = move_to_history(df_summary, df_history)
-    
-            # 7. 저장
-            save_signals(df_summary, df_history, signal_file)
-    
-            # 8. 알람 출력
-            logger.info("\n" + "=" * 80)
-            logger.info(f"🔔 알람: {len(alerts)}개")
-            logger.info("=" * 80)
-    
-            for alert in alerts:
-                logger.info(f"🔴 {alert['종목명']} ({alert['티커']}): {alert['상태메시지']}")
-    
-            # 9. 텔레그램 일일 리포트 전송
-            if TELEGRAM_AVAILABLE:
-                try:
-                    # 모든 사람에게 전송
-                    send_daily_report(alerts, len(df_summary), recipients=["all"])
-                    logger.info("✓ 텔레그램 일일 리포트 전송 완료")
-                except Exception as e:
-                    logger.error(f"텔레그램 전송 실패: {e}")
-    
+        # 5. Summary 업데이트 (현재 분석 결과만 저장)
+        if results:
+            df_summary = pd.DataFrame(results)
+
+        # 6. SOLD 종목 History로 이동
+        df_summary, df_history = move_to_history(df_summary, df_history)
+
+        # 7. 저장
+        save_signals(df_summary, df_history, signal_file)
+
+        # 8. 알람 출력
+        logger.info("\n" + "=" * 80)
+        logger.info(f"🔔 알람: {len(alerts)}개")
+        logger.info("=" * 80)
+
+        for alert in alerts:
+            logger.info(f"🔴 {alert['종목명']} ({alert['티커']}): {alert['상태메시지']}")
+
+        # 9. 텔레그램 일일 리포트 전송
+        if TELEGRAM_AVAILABLE:
+            try:
+                # 모든 사람에게 전송
+                send_daily_report(alerts, len(df_summary), recipients=["all"])
+                logger.info("✓ 텔레그램 일일 리포트 전송 완료")
+            except Exception as e:
+                logger.error(f"텔레그램 전송 실패: {e}")
+
         # 10. 완료
         logger.info("\n" + "=" * 80)
         logger.info("완료")

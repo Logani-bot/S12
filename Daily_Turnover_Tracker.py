@@ -30,7 +30,7 @@ API_TOKEN_URL = "https://api.kiwoom.com/oauth2/token"
 API_RANK_ENDPOINT = "/api/dostk/rkinfo"
 API_RANK_ID = "ka10032"
 
-EXCEL_PATH = "turnover_universe.xlsx"
+EXCEL_PATH = "output/turnover_universe.xlsx"
 SHEET_NAME = "universe"
 
 THRESHOLD_EOK = 5000.0  # 5000억
@@ -127,17 +127,19 @@ def fetch_rank_data(token: str, market: str, max_retry: int = 5) -> dict:
 
 # ==================== 데이터 처리 ====================
 def normalize_ticker(ticker: str) -> str:
-    """티커 정규화 (6자리 숫자)"""
+    """티커 정규화 (6자리, 알파벳 포함 가능)"""
     if not ticker:
         return ""
     
     # _AL 같은 suffix 제거
     ticker = str(ticker).split("_")[0].strip()
     
-    # 숫자만 추출
-    digits = "".join(c for c in ticker if c.isdigit())
+    # 알파벳이 포함된 경우 (예: 0008Z0) 그대로 반환
+    if any(c.isalpha() for c in ticker):
+        return ticker.zfill(6)[:6]
     
-    # 6자리로 zero-padding
+    # 숫자만 있는 경우 숫자만 추출하여 6자리로 패딩
+    digits = "".join(c for c in ticker if c.isdigit())
     return digits.zfill(6)[:6] if digits else ""
 
 

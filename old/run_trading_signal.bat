@@ -13,7 +13,7 @@ echo.
 REM ===== 1단계: 거래대금 5000억+ 종목 수집 =====
 echo [1/2] 거래대금 추적 중...
 echo ========================================
-python Daily_Turnover_Tracker.py --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs
+python Daily_Turnover_Tracker.py
 echo.
 
 REM ===== 2단계: 매매 시그널 생성 및 텔레그램 리포트 =====

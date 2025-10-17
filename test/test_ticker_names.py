@@ -57,3 +57,4 @@ def test_ticker_names():
 
 if __name__ == "__main__":
     test_ticker_names()
+
