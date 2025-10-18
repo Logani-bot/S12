@@ -83,6 +83,35 @@ def get_tick_unit(price: float) -> int:
         return 1000
 
 
+def get_nearest_tick_price(price: float) -> float:
+    """
+    가장 가까운 정규 호가 가격 계산
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        가장 가까운 정규 호가 가격
+    """
+    tick_unit = get_tick_unit(price)
+    return round(price / tick_unit) * tick_unit
+
+
+def get_one_tick_up_price(price: float) -> float:
+    """
+    한 호가 위 가격 계산
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        한 호가 위 가격
+    """
+    nearest_tick = get_nearest_tick_price(price)
+    tick_unit = get_tick_unit(nearest_tick)
+    return nearest_tick + tick_unit
+
+
 # ==================== API 함수 ====================
 def get_api_token(appkey: str, secret: str, max_retry: int = 3) -> str:
     """API 토큰 획득"""
@@ -232,29 +261,26 @@ def calculate_envelope_support(ma: float, envelope_pct: float = -20.0) -> float:
 
 
 def calculate_buy_line_1(envelope: float, price: float) -> float:
-    """1차 매수선: 엔벨로프 + 1호가"""
+    """1차 매수선: 엔벨로프의 한 호가 위"""
     if envelope is None:
         return None
-    tick = get_tick_unit(envelope)
-    return envelope + tick
+    return get_one_tick_up_price(envelope)
 
 
 def calculate_buy_line_2(buy1: float) -> float:
-    """2차 매수선: 1차 매수선에서 10% 하락 + 1틱"""
+    """2차 매수선: 1차 매수선에서 10% 하락 후 한 호가 위"""
     if buy1 is None:
         return None
     base_price = buy1 * (1 - BUY_LEVEL_GAP / 100)
-    tick = get_tick_unit(base_price)
-    return base_price + tick
+    return get_one_tick_up_price(base_price)
 
 
 def calculate_buy_line_3(buy2: float) -> float:
-    """3차 매수선: 2차 매수선에서 10% 하락 + 1틱"""
+    """3차 매수선: 2차 매수선에서 10% 하락 후 한 호가 위"""
     if buy2 is None:
         return None
     base_price = buy2 * (1 - BUY_LEVEL_GAP / 100)
-    tick = get_tick_unit(base_price)
-    return base_price + tick
+    return get_one_tick_up_price(base_price)
 
 
 def calculate_distance_pct(current: float, target: float) -> float:

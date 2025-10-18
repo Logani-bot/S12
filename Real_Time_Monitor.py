@@ -343,6 +343,35 @@ def calculate_tick_unit(price: float) -> int:
         return 1000
 
 
+def get_nearest_tick_price(price: float) -> float:
+    """
+    가장 가까운 정규 호가 가격 계산
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        가장 가까운 정규 호가 가격
+    """
+    tick_unit = calculate_tick_unit(price)
+    return round(price / tick_unit) * tick_unit
+
+
+def get_one_tick_up_price(price: float) -> float:
+    """
+    한 호가 위 가격 계산
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        한 호가 위 가격
+    """
+    nearest_tick = get_nearest_tick_price(price)
+    tick_unit = calculate_tick_unit(nearest_tick)
+    return nearest_tick + tick_unit
+
+
 def calculate_monitoring_interval(current_price: float, envelope: float) -> int:
     """
     동적 모니터링 간격 계산
@@ -428,19 +457,16 @@ def calculate_dynamic_ma20_and_buy_lines(ticker: str, token: str, current_price:
     # -20% 엔벨로프 지지선
     envelope = ma20 * 0.8
     
-    # 1차 매수선: 엔벨로프 + 1틱
-    tick = calculate_tick_unit(envelope)
-    buy1 = envelope + tick
+    # 1차 매수선: 엔벨로프의 한 호가 위
+    buy1 = get_one_tick_up_price(envelope)
     
-    # 2차 매수선: 1차에서 -10% + 1틱
+    # 2차 매수선: 1차에서 -10% 후 한 호가 위
     buy2_base = buy1 * 0.9
-    buy2_tick = calculate_tick_unit(buy2_base)
-    buy2 = buy2_base + buy2_tick
+    buy2 = get_one_tick_up_price(buy2_base)
     
-    # 3차 매수선: 2차에서 -10% + 1틱
+    # 3차 매수선: 2차에서 -10% 후 한 호가 위
     buy3_base = buy2 * 0.9
-    buy3_tick = calculate_tick_unit(buy3_base)
-    buy3 = buy3_base + buy3_tick
+    buy3 = get_one_tick_up_price(buy3_base)
     
     # 이격도 계산 (부동소수점 오차 보정)
     def safe_distance_pct(current, target):
