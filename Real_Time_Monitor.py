@@ -319,7 +319,7 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
 
 def calculate_tick_unit(price: float) -> int:
     """
-    한국 주식시장 표준 호가 단위 계산
+    한국 주식시장 정확한 호가 단위 계산
     
     Args:
         price: 기준 가격
@@ -327,15 +327,15 @@ def calculate_tick_unit(price: float) -> int:
     Returns:
         호가 단위
     """
-    if price < 1000:
+    if price < 2000:
         return 1
     elif price < 5000:
         return 5
-    elif price < 10000:
+    elif price < 20000:
         return 10
     elif price < 50000:
         return 50
-    elif price < 100000:
+    elif price < 200000:
         return 100
     elif price < 500000:
         return 500
