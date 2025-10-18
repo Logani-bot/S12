@@ -805,6 +805,7 @@ def main():
     parser.add_argument("--universe", default=DEFAULT_UNIVERSE_FILE, help="유니버스 파일 경로")
     parser.add_argument("--signal", default=DEFAULT_SIGNAL_FILE, help="시그널 파일 경로")
     parser.add_argument("--alert-threshold", type=float, default=DEFAULT_ALERT_THRESHOLD, help="알람 임계값 (%)")
+    parser.add_argument("--force", action="store_true", help="거래일 체크 무시하고 강제 실행")
     
     args = parser.parse_args()
     
@@ -818,13 +819,17 @@ def main():
         logger.info(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 80)
         
-        # 거래일 체크
-        trading_info = get_trading_day_info()
-        if not trading_info['is_trading_day']:
-            logger.info(f"📅 비거래일입니다 ({trading_info['reason']})")
-            logger.info("거래일이 아닌 날에는 시그널 분석을 건너뜁니다.")
-            logger.info("=" * 80)
-            return
+        # 거래일 체크 (강제 실행 옵션이 없는 경우에만)
+        if not args.force:
+            trading_info = get_trading_day_info()
+            if not trading_info['is_trading_day']:
+                logger.info(f"📅 비거래일입니다 ({trading_info['reason']})")
+                logger.info("거래일이 아닌 날에는 시그널 분석을 건너뜁니다.")
+                logger.info("강제 실행하려면 --force 옵션을 사용하세요.")
+                logger.info("=" * 80)
+                return
+        else:
+            logger.info("🔧 강제 실행 모드: 거래일 체크를 무시합니다.")
         
         # 1. API 토큰 획득
         try:

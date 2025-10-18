@@ -925,15 +925,19 @@ def check_and_send_realtime_alert(
     return False
 
 
-def is_monitoring_time() -> bool:
+def is_monitoring_time(force_mode: bool = False) -> bool:
     """
     모니터링 시간대 체크 (거래일 08:00-20:00)
+    
+    Args:
+        force_mode: 강제 실행 모드 (거래일 체크 무시)
     """
     now = datetime.now()
     
-    # 거래일 체크 (주말/공휴일 제외)
-    if not is_trading_day(now.date()):
-        return False
+    # 거래일 체크 (강제 실행 모드가 아닌 경우에만)
+    if not force_mode:
+        if not is_trading_day(now.date()):
+            return False
     
     # 시간 체크 (08:00-20:00)
     return MONITORING_START_TIME <= now.time() <= MONITORING_END_TIME
@@ -1064,6 +1068,7 @@ def main():
     parser.add_argument("--appkey", required=True, help="키움 APPKEY")
     parser.add_argument("--secret", required=True, help="키움 SECRETKEY")
     parser.add_argument("--interval", type=int, default=60, help="기본 모니터링 간격 (초, 기본값: 60)")
+    parser.add_argument("--force", action="store_true", help="거래일 체크 무시하고 강제 실행")
     args = parser.parse_args()
     
     APPKEY = args.appkey
@@ -1088,18 +1093,27 @@ def main():
         cycle_count += 1
         current_time = datetime.now()
         
-        # 모니터링 시간대 체크
-        if not is_monitoring_time():
-            # 거래일 정보 가져오기
-            trading_info = get_trading_day_info()
-            if not trading_info['is_trading_day']:
-                logger.info(f"\n[사이클 {cycle_count}] 비거래일입니다 ({trading_info['reason']})")
-            else:
-                logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (거래일 08:00-20:00)")
-            
-            logger.info(f"⏰ {base_interval}초 후 재확인...")
-            time.sleep(base_interval)
-            continue
+        # 모니터링 시간대 체크 (강제 실행 옵션이 없는 경우에만)
+        if not args.force:
+            if not is_monitoring_time():
+                # 거래일 정보 가져오기
+                trading_info = get_trading_day_info()
+                if not trading_info['is_trading_day']:
+                    logger.info(f"\n[사이클 {cycle_count}] 비거래일입니다 ({trading_info['reason']})")
+                else:
+                    logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (거래일 08:00-20:00)")
+                
+                logger.info(f"⏰ {base_interval}초 후 재확인...")
+                logger.info("강제 실행하려면 --force 옵션을 사용하세요.")
+                time.sleep(base_interval)
+                continue
+        else:
+            # 강제 실행 모드에서는 시간대만 체크
+            if not is_monitoring_time(force_mode=True):
+                logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (08:00-20:00)")
+                logger.info(f"⏰ {base_interval}초 후 재확인...")
+                time.sleep(base_interval)
+                continue
         
         logger.info(f"\n{'=' * 80}")
         logger.info(f"[사이클 {cycle_count}] {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
