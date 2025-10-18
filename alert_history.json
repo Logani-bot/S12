@@ -1,13 +1,18 @@
 {
-  "date": "2025-10-17",
+  "date": "2025-10-18",
   "alerts": {
     "249420": {
       "READY_BUY1_1%": true
     },
-    "456160": {
+    "041190": {
+      "READY_BUY1_5%": true,
       "READY_BUY1_3%": true
     },
-    "041190": {
+    "456160": {
+      "READY_BUY1_3%": true,
+      "READY_BUY1_1%": true
+    },
+    "037270": {
       "READY_BUY1_5%": true
     }
   }

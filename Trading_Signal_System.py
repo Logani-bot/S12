@@ -121,6 +121,70 @@ def get_one_tick_up_price(price: float) -> float:
     return nearest_tick + tick_unit
 
 
+def predict_next_day_buy_price(S19_next: float) -> int:
+    """
+    다음날 매수 목표가 예측 (실시간 감시와 100% 동일한 로직)
+    
+    오늘(D일) 장마감 후 데이터로 다음날(D+1일) 실시간 감시 매수선과
+    완전히 동일한 매수 목표가를 미리 계산
+    
+    Args:
+        S19_next: 다음날 기준 19일 종가 합계 (S20 - Close_D_19)
+    
+    Returns:
+        매수 목표가 p (정상 호가)
+    """
+    import math
+    
+    # 1. 이론적 접점 계산
+    x_star = S19_next / 24.0
+    
+    # 2. 최초 후보 설정 (윗 호가로 올림)
+    p = ceil_tick(x_star)
+    
+    # 3. 반복 검증
+    while True:
+        delta = get_tick_unit(p)                      # 호가 단위 재판정
+        upper = (S19_next + 25.0 * delta) / 24.0      # 상한 계산
+        
+        if p < upper:                                 # 조건 충족 시 확정
+            return int(p)
+        else:
+            p = p + delta                             # 조건 미충족 → 한 호가 위로 이동
+
+
+def ceil_tick(price: float) -> float:
+    """
+    호가 단위에 맞춰 윗 호가로 올림
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        윗 호가로 올림된 가격
+    """
+    import math
+    
+    delta = get_tick_unit(price)
+    return math.ceil(price / delta) * delta
+
+
+def floor_tick(price: float) -> float:
+    """
+    호가 단위에 맞춰 아래 호가로 내림 (매도선용)
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        아래 호가로 내림된 가격
+    """
+    import math
+    
+    delta = get_tick_unit(price)
+    return math.floor(price / delta) * delta
+
+
 # ==================== API 함수 ====================
 def get_api_token(appkey: str, secret: str, max_retry: int = 3) -> str:
     """API 토큰 획득"""
@@ -269,11 +333,19 @@ def calculate_envelope_support(ma: float, envelope_pct: float = -20.0) -> float:
     return ma * (1 + envelope_pct / 100)
 
 
-def calculate_buy_line_1(envelope: float, price: float) -> float:
-    """1차 매수선: 엔벨로프의 한 호가 위"""
-    if envelope is None:
+def calculate_buy_line_1(S19_next: float) -> float:
+    """
+    1차 매수선: 다음날 실시간 감시와 100% 동일한 매수 목표가
+    
+    Args:
+        S19_next: 다음날 기준 19일 종가 합계 (S20 - Close_D_19)
+    
+    Returns:
+        1차 매수선 가격
+    """
+    if S19_next is None or S19_next <= 0:
         return None
-    return get_one_tick_up_price(envelope)
+    return predict_next_day_buy_price(S19_next)
 
 
 def calculate_buy_line_2(buy1: float) -> float:
@@ -290,6 +362,30 @@ def calculate_buy_line_3(buy2: float) -> float:
         return None
     base_price = buy2 * (1 - BUY_LEVEL_GAP / 100)
     return get_one_tick_up_price(base_price)
+
+
+def calculate_sell_line_1(avg_buy_price: float) -> float:
+    """1차 매도선: 평균 매수가에서 3% 상승 후 아래 호가"""
+    if avg_buy_price is None:
+        return None
+    target_price = avg_buy_price * (1 + SELL_LEVEL_1_GAP / 100)
+    return floor_tick(target_price)
+
+
+def calculate_sell_line_2(avg_buy_price: float) -> float:
+    """2차 매도선: 평균 매수가에서 5% 상승 후 아래 호가"""
+    if avg_buy_price is None:
+        return None
+    target_price = avg_buy_price * (1 + SELL_LEVEL_2_GAP / 100)
+    return floor_tick(target_price)
+
+
+def calculate_sell_line_3(avg_buy_price: float) -> float:
+    """3차 매도선: 평균 매수가에서 7% 상승 후 아래 호가"""
+    if avg_buy_price is None:
+        return None
+    target_price = avg_buy_price * (1 + SELL_LEVEL_3_GAP / 100)
+    return floor_tick(target_price)
 
 
 def calculate_distance_pct(current: float, target: float) -> float:
@@ -389,11 +485,16 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         logger.warning(f"  ⚠️ 20일선 계산 실패")
         return None
     
-    # 엔벨로프 지지선 (-20%)
+    # 다음날 기준 19일 종가 합계 계산
+    S20 = ma20 * 20  # 20일 종가 합계
+    Close_D_19 = df_chart.iloc[-20]["종가"]  # 20일 전 종가
+    S19_next = S20 - Close_D_19  # 다음날 기준 19일 종가 합계
+    
+    # 엔벨로프 지지선 (-20%) - 기존 로직 유지 (참고용)
     envelope = calculate_envelope_support(ma20, -20.0)
     
-    # 매수선 계산
-    buy1 = calculate_buy_line_1(envelope, close)
+    # 새로운 정확한 매수선 계산
+    buy1 = calculate_buy_line_1(S19_next)
     buy2 = calculate_buy_line_2(buy1)
     buy3 = calculate_buy_line_3(buy2)
     
@@ -402,8 +503,10 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
     dist_buy2 = calculate_distance_pct(close, buy2)
     dist_buy3 = calculate_distance_pct(close, buy3)
     
-    logger.info(f"  [{date_str}] 종가: {close:,.0f}원, 20일선: {ma20:,.0f}원, 엔벨로프: {envelope:,.0f}원")
-    logger.info(f"  매수선: 1차 {buy1:,.0f}, 2차 {buy2:,.0f}, 3차 {buy3:,.0f}")
+    logger.info(f"  [{date_str}] 종가: {close:,.0f}원, 20일선: {ma20:,.0f}원")
+    logger.info(f"  📊 S20: {S20:,.0f}, Close_D_19: {Close_D_19:,.0f}, S19_next: {S19_next:,.0f}")
+    logger.info(f"  🎯 정확한 매수선: 1차 {buy1:,.0f}, 2차 {buy2:,.0f}, 3차 {buy3:,.0f}")
+    logger.info(f"  📈 기존 엔벨로프: {envelope:,.0f}원 (참고용)")
     
     # 기존 데이터 확인
     existing = df_summary[df_summary["티커"] == ticker] if not df_summary.empty and "티커" in df_summary.columns else pd.DataFrame()
@@ -556,16 +659,8 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         "3차매도선(+7%)": sell3,
         "3차매도선이격도(%)": dist_sell3,
         "최고도달선": max_high_line,
-        "최종업데이트": now.strftime("%Y-%m-%d %H:%M:%S")
     }
     
-    # ⭐ 첫주도주 날짜만 (시간 제거)
-    if "첫주도주" in result and result["첫주도주"]:
-        try:
-            if isinstance(result["첫주도주"], str):
-                result["첫주도주"] = pd.to_datetime(result["첫주도주"]).strftime("%Y-%m-%d")
-        except:
-            pass
     
     return result
 
@@ -664,7 +759,7 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
                 "1차매도선이격도(%)", "2차매도선이격도(%)", "3차매도선이격도(%)", "실현수익률(%)"]
     
     # 날짜 열
-    date_cols = ["첫주도주", "1차매수일", "2차매수일", "3차매수일", "종료일"]
+    date_cols = ["1차매수일", "2차매수일", "3차매수일", "종료일"]
     
     # 데이터 행 포맷팅
     for row_idx in range(2, ws.max_row + 1):
@@ -672,9 +767,8 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
             cell = ws.cell(row=row_idx, column=col_idx)
             header = headers[col_idx - 1]
             
-            # 테두리 적용 (최종업데이트 제외)
-            if header != "최종업데이트":
-                cell.border = thin_border
+            # 테두리 적용
+            cell.border = thin_border
             
             # 금액 포맷 (천 자리 콤마)
             if header in price_cols:
@@ -708,9 +802,8 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
         header_cell = ws.cell(row=1, column=col_idx)
         header = headers[col_idx - 1]
         
-        # 최종업데이트 제외하고 테두리
-        if header != "최종업데이트":
-            header_cell.border = thin_border
+        # 테두리 적용
+        header_cell.border = thin_border
         
         header_cell.font = Font(bold=True)
         header_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -735,25 +828,9 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
             ws.column_dimensions[column_letter].width = 12
         elif header == "매수상태" or header == "알람상태":
             ws.column_dimensions[column_letter].width = 12
-        elif header == "최종업데이트":
-            ws.column_dimensions[column_letter].width = 20
         else:
             ws.column_dimensions[column_letter].width = 12
     
-    # 최종 업데이트 위치 조정 (첫주도주 제목 셀 두 칸 오른쪽 = C1)
-    if "첫주도주" in col_indices:
-        first_leading_col = col_indices["첫주도주"]
-        update_col = first_leading_col + 2  # 두 칸 오른쪽
-        
-        # 현재 시간
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # C1 셀에 최종 업데이트 넣기 (왼쪽 정렬, 테두리 없음)
-        update_cell = ws.cell(row=1, column=update_col)
-        update_cell.value = f"최종 업데이트: {now}"
-        update_cell.alignment = Alignment(horizontal="left", vertical="center")
-        update_cell.border = Border()  # 테두리 없음
-        update_cell.font = Font(bold=False)
     
     wb.save(file_path)
 
@@ -920,16 +997,6 @@ def main():
 
             result = analyze_stock(token, ticker, name, df_summary, alert_threshold)
 
-            # 첫 주도주 날짜 추가
-            if result:
-                # 기존 Summary에 있는 종목이면 기존 "첫주도주" 유지
-                if not df_summary.empty and "티커" in df_summary.columns:
-                    existing = df_summary[df_summary["티커"] == ticker]
-                    if not existing.empty and "첫주도주" in existing.columns:
-                        result["첫주도주"] = existing["첫주도주"].values[0]
-                # 신규 종목이면 최근주도주 사용 (이번 사이클의 시작일)
-                elif recent_leading_date:
-                    result["첫주도주"] = recent_leading_date
 
             if result:
                 results.append(result)

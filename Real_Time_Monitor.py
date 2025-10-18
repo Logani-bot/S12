@@ -226,95 +226,7 @@ def get_enhanced_price_data(ticker: str, token: str) -> Optional[Dict]:
         return None
 
 
-def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.DataFrame]:
-    """
-    차트 데이터 조회 (과거 N일)
-    
-    Args:
-        ticker: 종목 코드
-        token: 접근 토큰
-        days: 조회 일수
-    
-    Returns:
-        DataFrame (날짜, 종가) 또는 None
-    """
-    try:
-        url = f"{KIWOOM_BASE_URL}/api/dostk/chart"
-        
-        headers = {
-            "authorization": f"Bearer {token}",
-            "Content-Type": "application/json;charset=UTF-8",
-            "api-id": "ka10081",
-            "cont-yn": "N",
-            "next-key": ""
-        }
-        
-        # 오늘 날짜
-        today = datetime.now().strftime("%Y%m%d")
-        
-        body = {
-            "stk_cd": ticker,
-            "base_dt": today,
-            "upd_stkpc_tp": "1"
-        }
-        
-        response = requests.post(url, headers=headers, json=body, timeout=10)
-        response.raise_for_status()
-        
-        result = response.json()
-        
-        # 데이터 추출
-        output = result.get("stk_dt_pole_chart_qry")
-        
-        if not output or len(output) == 0:
-            logger.warning(f"⚠ {ticker}: 차트 데이터 없음")
-            return None
-        
-        # DataFrame 생성
-        records = []
-        for item in output:
-            # 날짜 추출 (첫 번째 키에서 4번째 키가 dt)
-            item_keys = list(item.keys())
-            date_str = None
-            close_price = None
-            
-            # 날짜는 보통 4번째 키 (dt)
-            if len(item_keys) > 3:
-                date_str = item[item_keys[3]]  # dt
-            
-            # 종가는 첫 번째 키 (cur_pric)
-            if len(item_keys) > 0:
-                try:
-                    close_price = float(str(item[item_keys[0]]).replace(",", ""))
-                except (ValueError, TypeError):
-                    pass
-            
-            if date_str and close_price and close_price > 0:
-                try:
-                    records.append({
-                        "날짜": pd.to_datetime(date_str, format="%Y%m%d"),
-                        "종가": close_price
-                    })
-                except:
-                    pass
-        
-        if not records:
-            logger.warning(f"⚠ {ticker}: 유효한 차트 데이터 없음")
-            return None
-        
-        df = pd.DataFrame(records)
-        
-        # 날짜 기준 내림차순 정렬 후 최근 N일 선택
-        df = df.sort_values("날짜", ascending=False).head(days)
-        
-        # 시간순으로 다시 정렬 (MA 계산용)
-        df = df.sort_values("날짜", ascending=True).reset_index(drop=True)
-        
-        return df
-    
-    except Exception as e:
-        logger.error(f"✗ {ticker} 차트 조회 실패: {e}")
-        return None
+# fetch_chart_data 함수 제거 - Excel에서 매수선을 직접 읽어오므로 불필요
 
 
 def calculate_tick_unit(price: float) -> int:
@@ -381,6 +293,9 @@ def get_one_tick_up_price(price: float) -> float:
     return nearest_tick + tick_unit
 
 
+# solve_contact_price 함수 제거 - Excel 기반 시스템에서는 불필요
+
+
 def calculate_monitoring_interval(current_price: float, envelope: float) -> int:
     """
     동적 모니터링 간격 계산
@@ -426,86 +341,15 @@ def calculate_low_price_distance(low_price: float, target_price: float) -> float
     return ((low_price - target_price) / target_price) * 100
 
 
-def calculate_dynamic_ma20_and_buy_lines(ticker: str, token: str, current_price: float) -> Optional[Dict]:
+# calculate_dynamic_ma20_and_buy_lines 함수 제거 - Excel에서 매수선을 직접 읽어오므로 불필요
+
+
+def load_summary_stocks_with_buy_lines() -> pd.DataFrame:
     """
-    동적 20일선 및 매수선 계산
-    
-    과거 19일 종가 + 오늘 현재가로 20일선 계산
-    
-    Args:
-        ticker: 종목 코드
-        token: 접근 토큰
-        current_price: 현재가
+    Summary 탭에서 모니터링 대상 종목과 매수선 로드
     
     Returns:
-        {
-            "ma20": 20일선,
-            "envelope": -20% 엔벨로프,
-            "buy1": 1차 매수선,
-            "buy2": 2차 매수선,
-            "buy3": 3차 매수선,
-            "dist_buy1": 1차 매수선 이격도(%),
-            "dist_buy2": 2차 매수선 이격도(%),
-            "dist_buy3": 3차 매수선 이격도(%)
-        }
-    """
-    # 과거 19일 데이터 조회
-    df_chart = fetch_chart_data(ticker, token, days=19)
-    
-    if df_chart is None or len(df_chart) < 19:
-        logger.warning(f"⚠ {ticker}: 과거 데이터 부족 (19일 필요)")
-        return None
-    
-    # 과거 19일 종가 + 오늘 현재가
-    past_19_closes = df_chart["종가"].tolist()
-    all_20_closes = past_19_closes + [current_price]
-    
-    # 20일 이동평균
-    ma20 = sum(all_20_closes) / 20
-    
-    # -20% 엔벨로프 지지선
-    envelope = ma20 * 0.8
-    
-    # 1차 매수선: 엔벨로프의 한 호가 위
-    buy1 = get_one_tick_up_price(envelope)
-    
-    # 2차 매수선: 1차에서 -10% 후 한 호가 위
-    buy2_base = buy1 * 0.9
-    buy2 = get_one_tick_up_price(buy2_base)
-    
-    # 3차 매수선: 2차에서 -10% 후 한 호가 위
-    buy3_base = buy2 * 0.9
-    buy3 = get_one_tick_up_price(buy3_base)
-    
-    # 이격도 계산 (부동소수점 오차 보정)
-    def safe_distance_pct(current, target):
-        if current is None or target is None or target == 0:
-            return None
-        distance_pct = ((current - target) / target) * 100
-        # 절댓값이 1e-10보다 작으면 0으로 처리 (극소값 제거)
-        if abs(distance_pct) < 1e-10:
-            return 0.0
-        return distance_pct
-    
-    dist_buy1 = safe_distance_pct(current_price, buy1)
-    dist_buy2 = safe_distance_pct(current_price, buy2)
-    dist_buy3 = safe_distance_pct(current_price, buy3)
-    
-    return {
-        "ma20": ma20,
-        "envelope": envelope,
-        "buy1": buy1,
-        "buy2": buy2,
-        "buy3": buy3,
-        "dist_buy1": dist_buy1,
-        "dist_buy2": dist_buy2,
-        "dist_buy3": dist_buy3
-    }
-
-
-def load_summary_stocks() -> pd.DataFrame:
-    """
-    Summary 탭에서 모니터링 대상 종목 로드
+        DataFrame with columns: 티커, 종목명, 매수상태, 1차매수선, 2차매수선, 3차매수선
     """
     try:
         if not Path(SIGNAL_FILE).exists():
@@ -518,8 +362,23 @@ def load_summary_stocks() -> pd.DataFrame:
             logger.info("ℹ Summary 탭에 종목이 없습니다.")
             return pd.DataFrame()
         
-        logger.info(f"[OK] Summary 탭에서 {len(df)}개 종목 로드")
-        return df
+        # 필요한 컬럼만 선택
+        required_columns = ['티커', '종목명', '매수상태', '1차매수선', '2차매수선', '3차매수선']
+        
+        # 컬럼 존재 확인
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            logger.error(f"✗ 필수 컬럼이 없습니다: {missing_columns}")
+            return pd.DataFrame()
+        
+        # 필요한 컬럼만 추출
+        df_filtered = df[required_columns].copy()
+        
+        # 매수선이 유효한 종목만 필터링
+        df_filtered = df_filtered.dropna(subset=['1차매수선', '2차매수선', '3차매수선'])
+        
+        logger.info(f"[OK] Summary 탭에서 {len(df_filtered)}개 종목 로드 (매수선 포함)")
+        return df_filtered
     
     except Exception as e:
         logger.error(f"✗ Summary 탭 로드 실패: {e}")
@@ -606,23 +465,29 @@ def calculate_low_price_distance(low_price: float, target_price: float) -> float
     return distance_pct
 
 
-def check_and_send_realtime_alert(
+def check_simplified_alert(
     ticker: str,
     stock_name: str,
-    price_data: Dict,
+    current_price: float,
+    low_price: float,
     buy_status: str,
-    buy_lines: Dict,
+    buy1: float,
+    buy2: float,
+    buy3: float,
     history: Dict
 ) -> bool:
     """
-    알람 조건 체크 및 텔레그램 전송
+    간단한 알람 조건 체크 및 텔레그램 전송 (Excel 기반)
     
     Args:
         ticker: 종목 코드
         stock_name: 종목명
-        price_data: 가격 데이터 (current, low, high, open, volume)
+        current_price: 현재가
+        low_price: 저가
         buy_status: 매수 상태 (NONE, BOUGHT_1, BOUGHT_2, BOUGHT_3)
-        buy_lines: 매수선 정보
+        buy1: 1차 매수선 (Excel에서 읽어온 값)
+        buy2: 2차 매수선 (Excel에서 읽어온 값)
+        buy3: 3차 매수선 (Excel에서 읽어온 값)
         history: 알람 히스토리
     
     Returns:
@@ -630,16 +495,13 @@ def check_and_send_realtime_alert(
     """
     from telegram_notifier import send_realtime_alert
     
-    current_price = price_data.get('current', 0)
-    low_price = price_data.get('low', 0)
-    
     alerts = history.get("alerts", {})
     ticker_alerts = alerts.get(ticker, {})
     
     # 1차 매수선 저가 기준 이격도 계산
     if buy_status == "NONE":
         # 저가 기준 이격도 계산
-        low_dist_buy1 = calculate_low_price_distance(low_price, buy_lines["buy1"])
+        low_dist_buy1 = calculate_low_price_distance(low_price, buy1)
         
         # 저가가 매수선에 도달한 경우 (마이너스 이격도) - 매수 체결!
         if low_dist_buy1 <= 0:
@@ -652,7 +514,7 @@ def check_and_send_realtime_alert(
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    target_price=buy_lines["buy1"],
+                    target_price=buy1,
                     distance_pct=low_dist_buy1,
                     recipients=["all"]
                 )
@@ -665,7 +527,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯 {stock_name} ({ticker}): 1차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
+        # 저가가 매수선 1% 이내 접근한 경우
         elif 0 < low_dist_buy1 <= 1.0:
             alert_key = "READY_BUY1_1%"
             alert_type = "1차 매수선 1% 인접"
@@ -676,7 +538,7 @@ def check_and_send_realtime_alert(
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    target_price=buy_lines["buy1"],
+                    target_price=buy1,
                     distance_pct=low_dist_buy1,
                     recipients=["all"]
                 )
@@ -694,14 +556,13 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY1_3%"
             alert_type = "1차 매수선 3% 인접"
             
-            # 1% 알림이 없었던 경우만 3% 알림 전송
             if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY1_1%", False):
                 send_realtime_alert(
                     alert_type=alert_type,
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    target_price=buy_lines["buy1"],
+                    target_price=buy1,
                     distance_pct=low_dist_buy1,
                     recipients=["all"]
                 )
@@ -719,7 +580,6 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY1_5%"
             alert_type = "1차 매수선 5% 인접"
             
-            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
             if (not ticker_alerts.get(alert_key, False) and 
                 not ticker_alerts.get("READY_BUY1_1%", False) and 
                 not ticker_alerts.get("READY_BUY1_3%", False)):
@@ -728,7 +588,7 @@ def check_and_send_realtime_alert(
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    target_price=buy_lines["buy1"],
+                    target_price=buy1,
                     distance_pct=low_dist_buy1,
                     recipients=["all"]
                 )
@@ -743,7 +603,7 @@ def check_and_send_realtime_alert(
     
     # 2차 매수선 저가 기준 이격도 계산 (BOUGHT_1 상태일 때만)
     elif buy_status == "BOUGHT_1":
-        low_dist_buy2 = calculate_low_price_distance(low_price, buy_lines["buy2"])
+        low_dist_buy2 = calculate_low_price_distance(low_price, buy2)
         
         # 저가가 매수선에 도달한 경우 (마이너스 이격도) - 매수 체결!
         if low_dist_buy2 <= 0:
@@ -757,7 +617,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy2"],
+                    target_price=buy2,
                     distance_pct=low_dist_buy2,
                     recipients=["all"]
                 )
@@ -770,7 +630,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯 {stock_name} ({ticker}): 2차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
+        # 저가가 매수선 1% 이내 접근한 경우
         elif 0 < low_dist_buy2 <= 1.0:
             alert_key = "READY_BUY2_1%"
             alert_type = "2차 매수선 1% 인접"
@@ -782,7 +642,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy2"],
+                    target_price=buy2,
                     distance_pct=low_dist_buy2,
                     recipients=["all"]
                 )
@@ -800,7 +660,6 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY2_3%"
             alert_type = "2차 매수선 3% 인접"
             
-            # 1% 알림이 없었던 경우만 3% 알림 전송
             if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY2_1%", False):
                 send_realtime_alert(
                     alert_type=alert_type,
@@ -808,7 +667,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy2"],
+                    target_price=buy2,
                     distance_pct=low_dist_buy2,
                     recipients=["all"]
                 )
@@ -826,7 +685,6 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY2_5%"
             alert_type = "2차 매수선 5% 인접"
             
-            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
             if (not ticker_alerts.get(alert_key, False) and 
                 not ticker_alerts.get("READY_BUY2_1%", False) and 
                 not ticker_alerts.get("READY_BUY2_3%", False)):
@@ -836,7 +694,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy2"],
+                    target_price=buy2,
                     distance_pct=low_dist_buy2,
                     recipients=["all"]
                 )
@@ -851,7 +709,7 @@ def check_and_send_realtime_alert(
     
     # 3차 매수선 저가 기준 이격도 계산 (BOUGHT_2 상태일 때만)
     elif buy_status == "BOUGHT_2":
-        low_dist_buy3 = calculate_low_price_distance(low_price, buy_lines["buy3"])
+        low_dist_buy3 = calculate_low_price_distance(low_price, buy3)
         
         # 저가가 매수선에 도달한 경우 (마이너스 이격도) - 매수 체결!
         if low_dist_buy3 <= 0:
@@ -865,7 +723,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy3"],
+                    target_price=buy3,
                     distance_pct=low_dist_buy3,
                     recipients=["all"]
                 )
@@ -878,7 +736,7 @@ def check_and_send_realtime_alert(
                 logger.info(f"🎯🎯🎯 {stock_name} ({ticker}): 3차 매수 체결! 알람 전송")
                 return True
         
-        # 저가가 매수선 1% 이내 접근한 경우 (가장 가까운 조건부터 체크)
+        # 저가가 매수선 1% 이내 접근한 경우
         elif 0 < low_dist_buy3 <= 1.0:
             alert_key = "READY_BUY3_1%"
             alert_type = "3차 매수선 1% 인접"
@@ -890,7 +748,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy3"],
+                    target_price=buy3,
                     distance_pct=low_dist_buy3,
                     recipients=["all"]
                 )
@@ -908,7 +766,6 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY3_3%"
             alert_type = "3차 매수선 3% 인접"
             
-            # 1% 알림이 없었던 경우만 3% 알림 전송
             if not ticker_alerts.get(alert_key, False) and not ticker_alerts.get("READY_BUY3_1%", False):
                 send_realtime_alert(
                     alert_type=alert_type,
@@ -916,7 +773,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy3"],
+                    target_price=buy3,
                     distance_pct=low_dist_buy3,
                     recipients=["all"]
                 )
@@ -934,7 +791,6 @@ def check_and_send_realtime_alert(
             alert_key = "READY_BUY3_5%"
             alert_type = "3차 매수선 5% 인접"
             
-            # 1%, 3% 알림이 없었던 경우만 5% 알림 전송
             if (not ticker_alerts.get(alert_key, False) and 
                 not ticker_alerts.get("READY_BUY3_1%", False) and 
                 not ticker_alerts.get("READY_BUY3_3%", False)):
@@ -944,7 +800,7 @@ def check_and_send_realtime_alert(
                     ticker=ticker,
                     current_price=current_price,
                     low_price=low_price,
-                    target_price=buy_lines["buy3"],
+                    target_price=buy3,
                     distance_pct=low_dist_buy3,
                     recipients=["all"]
                 )
@@ -978,9 +834,9 @@ def is_monitoring_time(force_mode: bool = False) -> bool:
     return MONITORING_START_TIME <= now.time() <= MONITORING_END_TIME
 
 
-def run_dynamic_monitoring_cycle(next_check_times: dict):
+def run_simplified_monitoring_cycle():
     """
-    동적 간격 모니터링 사이클 실행
+    단순화된 모니터링 사이클 실행 (Excel 기반)
     """
     global KIWOOM_TOKEN
     
@@ -992,8 +848,8 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
                 logger.error("✗ 토큰 발급 실패")
                 return False
         
-        # 2. Summary 종목 로드
-        df_summary = load_summary_stocks()
+        # 2. Excel에서 종목과 매수선 로드
+        df_summary = load_summary_stocks_with_buy_lines()
         if df_summary.empty:
             logger.info("ℹ 모니터링 대상 종목이 없습니다.")
             return True
@@ -1001,7 +857,7 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
         # 3. 알람 히스토리 로드
         alert_history = load_alert_history()
         
-        # 4. 동적 간격으로 종목별 모니터링
+        # 4. 각 종목별 모니터링
         current_time = datetime.now()
         alert_count = 0
         checked_count = 0
@@ -1011,10 +867,10 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
             stock_name = row.get("종목명", "")
             buy_status = row.get("매수상태", "NONE")
             
-            # 종목별 다음 체크 시간 확인
-            next_check_time = next_check_times.get(ticker)
-            if next_check_time and current_time < next_check_time:
-                continue  # 아직 체크할 시간이 안 됨
+            # Excel에서 매수선 읽기
+            buy1 = row.get("1차매수선", 0)
+            buy2 = row.get("2차매수선", 0)
+            buy3 = row.get("3차매수선", 0)
             
             checked_count += 1
             logger.info(f"\n[{checked_count}] {stock_name} ({ticker}) 모니터링 중...")
@@ -1023,12 +879,10 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
             if checked_count > 1:
                 time.sleep(0.5)
             
-            # 확장된 가격 데이터 조회
+            # 확장된 가격 데이터 조회 (현재가, 저가만)
             price_data = get_enhanced_price_data(ticker, KIWOOM_TOKEN)
             if not price_data:
                 logger.warning(f"⚠ {stock_name}: 가격 데이터 조회 실패, 스킵")
-                # 실패한 종목은 10분 후 재시도
-                next_check_times[ticker] = current_time + timedelta(minutes=10)
                 continue
             
             current_price = price_data.get('current', 0)
@@ -1039,31 +893,22 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
             logger.info(f"  [저가] 저가: {low_price:,.0f}원")
             logger.info(f"  [고가] 고가: {high_price:,.0f}원")
             
-            # 동적 매수선 계산
-            buy_lines = calculate_dynamic_ma20_and_buy_lines(ticker, KIWOOM_TOKEN, current_price)
-            if not buy_lines:
-                logger.warning(f"⚠ {stock_name}: 매수선 계산 실패, 스킵")
-                # 실패한 종목은 10분 후 재시도
-                next_check_times[ticker] = current_time + timedelta(minutes=10)
-                continue
+            # Excel에서 읽어온 매수선 표시
+            logger.info(f"  [매수선] 1차: {buy1:,.0f}원, 2차: {buy2:,.0f}원, 3차: {buy3:,.0f}원")
             
-            logger.info(f"  [20일선] 20일선: {buy_lines['ma20']:,.0f}원")
-            logger.info(f"  [1차매수선] 1차 매수선: {buy_lines['buy1']:,.0f}원 (이격도: {buy_lines['dist_buy1']:.1f}%)")
-            logger.info(f"  [2차매수선] 2차 매수선: {buy_lines['buy2']:,.0f}원 (이격도: {buy_lines['dist_buy2']:.1f}%)")
-            logger.info(f"  [3차매수선] 3차 매수선: {buy_lines['buy3']:,.0f}원 (이격도: {buy_lines['dist_buy3']:.1f}%)")
+            # 현재가 기준 이격도 계산
+            dist1 = ((current_price - buy1) / buy1) * 100 if buy1 > 0 else None
+            dist2 = ((current_price - buy2) / buy2) * 100 if buy2 > 0 else None
+            dist3 = ((current_price - buy3) / buy3) * 100 if buy3 > 0 else None
             
-            # 동적 간격 계산
-            interval = calculate_monitoring_interval(current_price, buy_lines['envelope'])
-            next_check_times[ticker] = current_time + timedelta(seconds=interval)
+            logger.info(f"  [이격도] 1차: {dist1:.1f}%, 2차: {dist2:.1f}%, 3차: {dist3:.1f}%")
             
-            logger.info(f"  [간격] 다음 모니터링 간격: {interval}초 ({interval//60}분)")
-            
-            # 저가 기준 인접 알림 (5%, 3%, 1%)
-            if check_and_send_realtime_alert(ticker, stock_name, price_data, buy_status, buy_lines, alert_history):
+            # 저가 기준 인접 알림 체크
+            if check_simplified_alert(ticker, stock_name, current_price, low_price, buy_status, buy1, buy2, buy3, alert_history):
                 alert_count += 1
         
         logger.info("\n" + "=" * 80)
-        logger.info("[OK] 동적 모니터링 사이클 완료")
+        logger.info("[OK] 단순화된 모니터링 사이클 완료")
         logger.info(f"  전체 종목: {len(df_summary)}개")
         logger.info(f"  체크한 종목: {checked_count}개")
         logger.info(f"  전송 알람: {alert_count}개")
@@ -1083,26 +928,20 @@ def run_dynamic_monitoring_cycle(next_check_times: dict):
         return False
 
 
-def run_monitoring_cycle():
-    """
-    1회 모니터링 사이클 실행 (기존 방식 - 호환성 유지)
-    """
-    # 기존 방식으로 동작하도록 임시 구현
-    next_check_times = {}
-    return run_dynamic_monitoring_cycle(next_check_times)
+# run_monitoring_cycle 함수 제거 - 단순화된 버전으로 교체됨
 
 
 def main():
     """
-    메인 함수 - 동적 간격 실시간 모니터링
+    메인 함수 - 단순화된 실시간 모니터링 (Excel 기반)
     """
     global APPKEY, SECRETKEY, KIWOOM_TOKEN
     
     # 인자 파싱
-    parser = argparse.ArgumentParser(description="실시간 주식 모니터링 (동적 간격)")
+    parser = argparse.ArgumentParser(description="실시간 주식 모니터링 (Excel 기반)")
     parser.add_argument("--appkey", required=True, help="키움 APPKEY")
     parser.add_argument("--secret", required=True, help="키움 SECRETKEY")
-    parser.add_argument("--interval", type=int, default=60, help="기본 모니터링 간격 (초, 기본값: 60)")
+    parser.add_argument("--interval", type=int, default=60, help="모니터링 간격 (초, 기본값: 60)")
     parser.add_argument("--force", action="store_true", help="거래일 체크 무시하고 강제 실행")
     args = parser.parse_args()
     
@@ -1111,16 +950,13 @@ def main():
     base_interval = args.interval
     
     logger.info("=" * 80)
-    logger.info("🔍 실시간 주식 모니터링 시작 (개선된 버전)")
-    logger.info(f"⏰ 기본 모니터링 간격: {base_interval}초 ({base_interval//60}분)")
-    logger.info("📊 동적 간격: 1% 이내(1분), 3% 이내(3분), 10% 이내(10분)")
+    logger.info("🔍 실시간 주식 모니터링 시작 (Excel 기반 단순화 버전)")
+    logger.info(f"⏰ 모니터링 간격: {base_interval}초 ({base_interval//60}분)")
+    logger.info("📊 Excel에서 매수선 읽어오기")
     logger.info("🎯 저가 기준 터치 감지 활성화")
     logger.info("🕐 모니터링 시간: 거래일 08:00-20:00")
     logger.info("📅 주말/공휴일 모니터링 중단")
     logger.info("=" * 80)
-    
-    # 종목별 다음 체크 시간 관리
-    next_check_times = {}  # {ticker: timestamp}
     
     cycle_count = 0
     
@@ -1154,13 +990,13 @@ def main():
         logger.info(f"[사이클 {cycle_count}] {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"{'=' * 80}")
         
-        # 모니터링 실행 (동적 간격 적용)
-        success = run_dynamic_monitoring_cycle(next_check_times)
+        # 단순화된 모니터링 실행
+        success = run_simplified_monitoring_cycle()
         
         if not success:
             logger.warning("[WARNING] 모니터링 실패, 재시도...")
         
-        # 다음 실행까지 대기 (기본 간격)
+        # 다음 실행까지 대기
         logger.info(f"\n[간격] {base_interval}초 후 다음 사이클 실행...")
         logger.info(f"   종료하려면 Ctrl+C를 누르세요.")
         
