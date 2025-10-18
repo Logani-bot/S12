@@ -3,6 +3,7 @@ Trading Signal System - 20일 이평선 엔벨로프 기반 매매 시그널
 - turnover_universe.xlsx의 종목들을 분석
 - 3단계 분할 매수/매도 시그널 생성
 - trading_signals.xlsx (Summary + History 탭) 생성
+- 거래일(평일)에만 실행 (주말/공휴일 제외)
 """
 
 import argparse
@@ -16,6 +17,9 @@ import pandas as pd
 import requests
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+
+# 거래일 체크 유틸리티 import
+from trading_day_utils import is_trading_day, get_trading_day_info
 
 # 텔레그램 알람
 try:
@@ -805,6 +809,14 @@ def main():
         logger.info("Trading Signal System 시작")
         logger.info(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 80)
+        
+        # 거래일 체크
+        trading_info = get_trading_day_info()
+        if not trading_info['is_trading_day']:
+            logger.info(f"📅 비거래일입니다 ({trading_info['reason']})")
+            logger.info("거래일이 아닌 날에는 시그널 분석을 건너뜁니다.")
+            logger.info("=" * 80)
+            return
         
         # 1. API 토큰 획득
         try:

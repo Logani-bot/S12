@@ -1,11 +1,12 @@
 """
 Real-time Stock Monitoring System
 
-실시간 주식 모니터링 시스템 (08:00-20:00, 10분 간격)
+실시간 주식 모니터링 시스템 (거래일 08:00-20:00, 10분 간격)
 - Summary 탭의 종목만 모니터링
 - 현재가 기반 동적 20일선 계산
 - 매수선 5% 이내 접근 시 알람
 - 상태별 하루 1회 알람 (중복 방지)
+- 주말/공휴일에는 모니터링 중단
 """
 
 import sys
@@ -18,6 +19,9 @@ import json
 from typing import Dict, List, Tuple, Optional
 import argparse
 import time
+
+# 거래일 체크 유틸리티 import
+from trading_day_utils import is_trading_day, get_trading_day_info
 
 # 로깅 설정
 log_filename = f"realtime_monitor_{datetime.now().strftime('%Y%m%d')}.log"
@@ -917,10 +921,16 @@ def check_and_send_realtime_alert(
 
 def is_monitoring_time() -> bool:
     """
-    모니터링 시간대 체크 (08:00-20:00)
+    모니터링 시간대 체크 (거래일 08:00-20:00)
     """
-    now = datetime.now().time()
-    return MONITORING_START_TIME <= now <= MONITORING_END_TIME
+    now = datetime.now()
+    
+    # 거래일 체크 (주말/공휴일 제외)
+    if not is_trading_day(now.date()):
+        return False
+    
+    # 시간 체크 (08:00-20:00)
+    return MONITORING_START_TIME <= now.time() <= MONITORING_END_TIME
 
 
 def run_dynamic_monitoring_cycle(next_check_times: dict):
@@ -1059,7 +1069,8 @@ def main():
     logger.info(f"⏰ 기본 모니터링 간격: {base_interval}초 ({base_interval//60}분)")
     logger.info("📊 동적 간격: 1% 이내(1분), 3% 이내(3분), 10% 이내(10분)")
     logger.info("🎯 저가 기준 터치 감지 활성화")
-    logger.info("🕐 모니터링 시간: 08:00-20:00")
+    logger.info("🕐 모니터링 시간: 거래일 08:00-20:00")
+    logger.info("📅 주말/공휴일 모니터링 중단")
     logger.info("=" * 80)
     
     # 종목별 다음 체크 시간 관리
@@ -1073,7 +1084,13 @@ def main():
         
         # 모니터링 시간대 체크
         if not is_monitoring_time():
-            logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (08:00-20:00)")
+            # 거래일 정보 가져오기
+            trading_info = get_trading_day_info()
+            if not trading_info['is_trading_day']:
+                logger.info(f"\n[사이클 {cycle_count}] 비거래일입니다 ({trading_info['reason']})")
+            else:
+                logger.info(f"\n[사이클 {cycle_count}] 모니터링 시간대가 아닙니다 (거래일 08:00-20:00)")
+            
             logger.info(f"⏰ {base_interval}초 후 재확인...")
             time.sleep(base_interval)
             continue
