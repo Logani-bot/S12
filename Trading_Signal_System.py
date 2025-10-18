@@ -85,16 +85,25 @@ def get_tick_unit(price: float) -> int:
 
 def get_nearest_tick_price(price: float) -> float:
     """
-    가장 가까운 정규 호가 가격 계산
+    가장 가까운 정규 호가 가격 계산 (항상 윗 호가)
     
     Args:
         price: 기준 가격
     
     Returns:
-        가장 가까운 정규 호가 가격
+        가장 가까운 정규 호가 가격 (항상 윗 호가)
     """
     tick_unit = get_tick_unit(price)
-    return round(price / tick_unit) * tick_unit
+    
+    # 현재 가격이 정확히 호가 단위에 맞는 경우
+    if price % tick_unit == 0:
+        return price
+    
+    # 현재 가격이 호가 단위 사이에 있는 경우 항상 윗 호가로 설정
+    lower_tick = (price // tick_unit) * tick_unit
+    upper_tick = lower_tick + tick_unit
+    
+    return upper_tick
 
 
 def get_one_tick_up_price(price: float) -> float:
