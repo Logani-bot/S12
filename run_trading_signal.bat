@@ -1,36 +1,75 @@
 @echo off
-REM Trading Signal System 실행 배치 파일 (20:10 자동 실행)
-REM Windows 작업 스케줄러에서 호출됨
+REM Trading Signal System Batch File (20:10 Auto Execution)
+REM Called by Windows Task Scheduler
+REM Can run in screensaver/locked state
 
+REM Set working directory
 cd /d "%~dp0"
+
+REM Set log file
+set LOG_FILE=%~dp0logs\s12_daily_%date:~0,4%%date:~5,2%%date:~8,2%.log
+if not exist "%~dp0logs" mkdir "%~dp0logs"
+
+REM Start logging
+echo ======================================== >> "%LOG_FILE%"
+echo S12 Trading System - Daily Run (20:10) >> "%LOG_FILE%"
+echo Start Time: %date% %time% >> "%LOG_FILE%"
+echo ======================================== >> "%LOG_FILE%"
 
 echo ========================================
 echo S12 Trading System - Daily Run (20:10)
-echo 시작 시간: %date% %time%
+echo Start Time: %date% %time%
 echo ========================================
 echo.
 
-REM ===== 1단계: 거래대금 5000억+ 종목 수집 =====
-echo [1/2] 거래대금 추적 중...
+REM ===== Step 1: Daily Turnover Tracking =====
+echo [1/2] Daily Turnover Tracking...
 echo ========================================
-python Daily_Turnover_Tracker.py --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs
+echo [1/2] Daily Turnover Tracking... >> "%LOG_FILE%"
+
+"C:\Program Files (x86)\Python311\python.exe" Daily_Turnover_Tracker.py --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs >> "%LOG_FILE%" 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Daily Turnover Tracker failed! >> "%LOG_FILE%"
+    echo ERROR: Daily Turnover Tracker failed!
+    goto :error_exit
+)
+
+echo Step 1 completed successfully >> "%LOG_FILE%"
 echo.
 
-REM ===== 2단계: 매매 시그널 생성 및 텔레그램 리포트 =====
-echo [2/2] 매매 시그널 생성 중...
+REM ===== Step 2: Trading Signal Generation =====
+echo [2/2] Trading Signal Generation...
 echo ========================================
-python Trading_Signal_System.py ^
-  --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU ^
-  --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs ^
-  --alert-threshold 10.0
+echo [2/2] Trading Signal Generation... >> "%LOG_FILE%"
+
+"C:\Program Files (x86)\Python311\python.exe" Trading_Signal_System.py --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs --alert-threshold 10.0 >> "%LOG_FILE%" 2>&1
+
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Trading Signal System failed! >> "%LOG_FILE%"
+    echo ERROR: Trading Signal System failed!
+    goto :error_exit
+)
+
+echo Step 2 completed successfully >> "%LOG_FILE%"
 
 echo.
 echo ========================================
-echo 완료 시간: %date% %time%
+echo Completion Time: %date% %time%
 echo ========================================
+echo Completion Time: %date% %time% >> "%LOG_FILE%"
+echo ======================================== >> "%LOG_FILE%"
 
-REM 로그 저장 (선택)
-REM python Trading_Signal_System.py ... >> signal_log.txt 2>&1
+echo SUCCESS: All steps completed successfully >> "%LOG_FILE%"
+exit /b 0
+
+:error_exit
+echo ========================================
+echo ERROR: Process failed at %date% %time%
+echo ========================================
+echo ERROR: Process failed at %date% %time% >> "%LOG_FILE%"
+echo ======================================== >> "%LOG_FILE%"
+exit /b 1
 
 
 
