@@ -319,7 +319,13 @@ def fetch_chart_data(ticker: str, token: str, days: int = 20) -> Optional[pd.Dat
 
 def calculate_tick_unit(price: float) -> int:
     """
-    가격대별 호가 단위 계산
+    한국 주식시장 표준 호가 단위 계산
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        호가 단위
     """
     if price < 1000:
         return 1

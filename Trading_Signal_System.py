@@ -58,7 +58,15 @@ SELL_LEVELS = [3.0, 5.0, 7.0]  # +3%, +5%, +7%
 
 # ==================== 호가 단위 계산 ====================
 def get_tick_unit(price: float) -> int:
-    """주가별 호가 단위 반환"""
+    """
+    한국 주식시장 표준 호가 단위 반환
+    
+    Args:
+        price: 기준 가격
+    
+    Returns:
+        호가 단위
+    """
     if price < 1000:
         return 1
     elif price < 5000:
