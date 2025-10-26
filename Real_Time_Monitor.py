@@ -441,6 +441,42 @@ def save_alert_history(history: Dict):
         logger.error(f"✗ 알람 히스토리 저장 실패: {e}")
 
 
+def safe_float(value):
+    """안전한 float 변환 함수"""
+    if value is None or value == "":
+        return None
+    try:
+        if isinstance(value, str):
+            return float(value.replace(",", ""))
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def get_sell_prices_from_excel(ticker: str) -> dict:
+    """Excel에서 해당 종목의 매도가 정보를 가져오는 함수"""
+    try:
+        import pandas as pd
+        df = pd.read_excel('output/trading_signals.xlsx', sheet_name='Summary', dtype={'티커': str})
+        
+        # 해당 티커의 행 찾기
+        stock_row = df[df['티커'] == ticker]
+        
+        if len(stock_row) == 0:
+            return {}
+        
+        row = stock_row.iloc[0]
+        
+        return {
+            'sell1': safe_float(row.get('1차매도선(+3%)')),
+            'sell2': safe_float(row.get('2차매도선(+5%)')),
+            'sell3': safe_float(row.get('3차매도선(+7%)'))
+        }
+    except Exception as e:
+        logger.warning(f"매도가 정보 조회 실패 ({ticker}): {e}")
+        return {}
+
+
 def calculate_low_price_distance(low_price: float, target_price: float) -> float:
     """
     저가 기준 이격도 계산 (부동소수점 오차 보정)
@@ -514,6 +550,9 @@ def check_simplified_alert(
             alert_type = "1차 매수 체결!"
             
             if not ticker_alerts.get(alert_key, False):
+                # 매도가 정보 가져오기
+                sell_prices = get_sell_prices_from_excel(ticker)
+                
                 send_realtime_alert(
                     alert_type=alert_type,
                     stock_name=stock_name,
@@ -521,7 +560,8 @@ def check_simplified_alert(
                     current_price=current_price,
                     target_price=buy1,
                     distance_pct=low_dist_buy1,
-                    recipients=["all"]
+                    recipients=["all"],
+                    sell_prices=sell_prices
                 )
                 
                 ticker_alerts[alert_key] = True
@@ -616,15 +656,18 @@ def check_simplified_alert(
             alert_type = "2차 매수 체결!"
             
             if not ticker_alerts.get(alert_key, False):
+                # 매도가 정보 가져오기
+                sell_prices = get_sell_prices_from_excel(ticker)
+                
                 send_realtime_alert(
                     alert_type=alert_type,
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    low_price=low_price,
                     target_price=buy2,
                     distance_pct=low_dist_buy2,
-                    recipients=["all"]
+                    recipients=["all"],
+                    sell_prices=sell_prices
                 )
                 
                 ticker_alerts[alert_key] = True
@@ -722,15 +765,18 @@ def check_simplified_alert(
             alert_type = "3차 매수 체결!"
             
             if not ticker_alerts.get(alert_key, False):
+                # 매도가 정보 가져오기
+                sell_prices = get_sell_prices_from_excel(ticker)
+                
                 send_realtime_alert(
                     alert_type=alert_type,
                     stock_name=stock_name,
                     ticker=ticker,
                     current_price=current_price,
-                    low_price=low_price,
                     target_price=buy3,
                     distance_pct=low_dist_buy3,
-                    recipients=["all"]
+                    recipients=["all"],
+                    sell_prices=sell_prices
                 )
                 
                 ticker_alerts[alert_key] = True

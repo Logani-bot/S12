@@ -206,7 +206,8 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
 
 def send_realtime_alert(alert_type: str, stock_name: str, ticker: str, 
                        current_price: float, target_price: float, 
-                       distance_pct: float, recipients: List[str] = None):
+                       distance_pct: float, recipients: List[str] = None,
+                       sell_prices: dict = None):
     """
     실시간 알람 전송
     
@@ -218,8 +219,10 @@ def send_realtime_alert(alert_type: str, stock_name: str, ticker: str,
         target_price: 목표가 (매수선 또는 매도선)
         distance_pct: 이격도 (%)
         recipients: 수신자 리스트
+        sell_prices: 매도가 정보 {"sell1": 가격, "sell2": 가격, "sell3": 가격}
     """
     from datetime import datetime
+    import pandas as pd
     
     now = datetime.now().strftime("%H:%M:%S")
     
@@ -240,11 +243,18 @@ def send_realtime_alert(alert_type: str, stock_name: str, ticker: str,
     
     message = f"{emoji} <b>{alert_type}</b>\n"
     message += f"🕐 {now}\n"
-    message += f"───────────────\n"
+    message += f"───────────\n"
     message += f"종목: {stock_name}\n"
     message += f"현재가: {int(current_price):,}원\n"
     message += f"목표가: {int(round(target_price)):,}원\n"
     message += f"이격도: {distance_pct:+.2f}%\n"
+    
+    # 매수 체결 시 매도가 정보 추가
+    if "매수 체결" in alert_type and sell_prices:
+        message += f"\n3% 매도가: {int(round(sell_prices.get('sell1', 0))):,}원\n"
+        message += f"5% 매도가: {int(round(sell_prices.get('sell2', 0))):,}원\n"
+        message += f"7% 매도가: {int(round(sell_prices.get('sell3', 0))):,}원\n"
+        message += f"───────────\n"
     
     send_telegram_message(message, recipients)
 

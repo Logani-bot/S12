@@ -13,7 +13,7 @@ import sys
 from datetime import datetime, timedelta, date
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import pandas as pd
+import os
 import requests
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
@@ -868,7 +868,7 @@ def save_signals(df_summary: pd.DataFrame, df_history: pd.DataFrame, file_path: 
 
 
 def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """SOLD 상태 종목을 Summary → History로 이동 (축적식)"""
+    """SOLD 상태 종목을 Summary → History로 이동 (축적식) 및 Turnover Universe에서 삭제"""
     
     # SOLD 종목 찾기
     mask_sold = df_summary["매수상태"] == BuyStatus.SOLD
@@ -911,8 +911,27 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
         # ⭐ 축적식: 기존 History에 계속 추가 (제거 안 함)
         df_history = pd.concat([df_history, row.to_frame().T], ignore_index=True)
     
-    # Summary에서만 제거
+    # Summary에서 제거
     df_summary = df_summary[~mask_sold].reset_index(drop=True)
+    
+    # Turnover Universe에서도 매도 완료된 종목 삭제
+    try:
+        turnover_file = "output/turnover_universe.xlsx"
+        if os.path.exists(turnover_file):
+            df_turnover = pd.read_excel(turnover_file, dtype={'티커': str})
+            sold_tickers = df_sold['티커'].tolist()
+            
+            # 매도 완료된 종목을 Turnover Universe에서 삭제
+            df_turnover_updated = df_turnover[~df_turnover['티커'].isin(sold_tickers)]
+            
+            # 파일 저장
+            df_turnover_updated.to_excel(turnover_file, index=False)
+            
+            logger.info(f"✓ Turnover Universe에서 {len(sold_tickers)}개 종목 삭제 완료")
+        else:
+            logger.warning("⚠ Turnover Universe 파일을 찾을 수 없습니다.")
+    except Exception as e:
+        logger.error(f"❌ Turnover Universe 업데이트 실패: {e}")
     
     logger.info(f"✓ {len(df_sold)}개 종목을 History로 이동 (총 {len(df_history)}개 기록)")
     

@@ -1,0 +1,2 @@
+[2025-10-26 11:43:16] WARNING: 매도가 정보 조회 실패 (005930): name 'safe_float' is not defined
+[2025-10-26 11:44:22] INFO: ✓ 텔레그램 전송 성공: me
