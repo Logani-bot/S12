@@ -585,9 +585,19 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
     dist_sell3 = None
     
     if buy_status in [BuyStatus.BOUGHT_1, BuyStatus.BOUGHT_2, BuyStatus.BOUGHT_3] and avg_price:
-        sell1 = avg_price * (1 + SELL_LEVELS[0] / 100)  # +3%
-        sell2 = avg_price * (1 + SELL_LEVELS[1] / 100)  # +5%
-        sell3 = avg_price * (1 + SELL_LEVELS[2] / 100)  # +7%
+        # avg_price가 문자열인 경우 처리
+        if isinstance(avg_price, str):
+            try:
+                avg_price = float(avg_price.replace(",", ""))
+            except (ValueError, TypeError):
+                avg_price = 0
+        
+        if avg_price > 0:
+            sell1 = avg_price * (1 + SELL_LEVELS[0] / 100)  # +3%
+            sell2 = avg_price * (1 + SELL_LEVELS[1] / 100)  # +5%
+            sell3 = avg_price * (1 + SELL_LEVELS[2] / 100)  # +7%
+        else:
+            sell1 = sell2 = sell3 = 0
         
         dist_sell1 = calculate_distance_pct(close, sell1)
         dist_sell2 = calculate_distance_pct(close, sell2)

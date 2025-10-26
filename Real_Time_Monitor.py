@@ -495,6 +495,11 @@ def check_simplified_alert(
     """
     from telegram_notifier import send_realtime_alert
     
+    # 매수선 값이 None인 경우 스킵
+    if buy1 is None or buy2 is None or buy3 is None:
+        logger.warning(f"⚠ {stock_name} ({ticker}): 매수선 데이터 없음 (buy1:{buy1}, buy2:{buy2}, buy3:{buy3})")
+        return False
+    
     alerts = history.get("alerts", {})
     ticker_alerts = alerts.get(ticker, {})
     
@@ -867,10 +872,25 @@ def run_simplified_monitoring_cycle():
             stock_name = row.get("종목명", "")
             buy_status = row.get("매수상태", "NONE")
             
-            # Excel에서 매수선 읽기
-            buy1 = row.get("1차매수선", 0)
-            buy2 = row.get("2차매수선", 0)
-            buy3 = row.get("3차매수선", 0)
+            # Excel에서 매수선 읽기 (안전한 변환)
+            buy1_raw = row.get("1차매수선", 0)
+            buy2_raw = row.get("2차매수선", 0)
+            buy3_raw = row.get("3차매수선", 0)
+            
+            # 문자열을 숫자로 안전하게 변환
+            def safe_float(value):
+                if value is None or value == "":
+                    return None
+                try:
+                    if isinstance(value, str):
+                        return float(value.replace(",", ""))
+                    return float(value)
+                except (ValueError, TypeError):
+                    return None
+            
+            buy1 = safe_float(buy1_raw)
+            buy2 = safe_float(buy2_raw)
+            buy3 = safe_float(buy3_raw)
             
             checked_count += 1
             logger.info(f"\n[{checked_count}] {stock_name} ({ticker}) 모니터링 중...")
@@ -897,9 +917,9 @@ def run_simplified_monitoring_cycle():
             logger.info(f"  [매수선] 1차: {buy1:,.0f}원, 2차: {buy2:,.0f}원, 3차: {buy3:,.0f}원")
             
             # 현재가 기준 이격도 계산
-            dist1 = ((current_price - buy1) / buy1) * 100 if buy1 > 0 else None
-            dist2 = ((current_price - buy2) / buy2) * 100 if buy2 > 0 else None
-            dist3 = ((current_price - buy3) / buy3) * 100 if buy3 > 0 else None
+            dist1 = ((current_price - buy1) / buy1) * 100 if buy1 and buy1 > 0 else None
+            dist2 = ((current_price - buy2) / buy2) * 100 if buy2 and buy2 > 0 else None
+            dist3 = ((current_price - buy3) / buy3) * 100 if buy3 and buy3 > 0 else None
             
             logger.info(f"  [이격도] 1차: {dist1:.1f}%, 2차: {dist2:.1f}%, 3차: {dist3:.1f}%")
             

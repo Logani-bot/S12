@@ -1,0 +1,629 @@
+======================================== 
+S12 Trading System - Daily Run (20:10) 
+Start Time: 2025-10-23 20:10:01.64 
+======================================== 
+[1/2] Daily Turnover Tracking... 
+Step 1 completed successfully 
+[2/2] Trading Signal Generation... 
+[2025-10-23 20:10:05] INFO: ================================================================================
+[2025-10-23 20:10:05] INFO: Trading Signal System 시작
+[2025-10-23 20:10:05] INFO: 실행 시간: 2025-10-23 20:10:05
+[2025-10-23 20:10:05] INFO: ================================================================================
+[2025-10-23 20:10:05] INFO: \u2713 API 토큰 획득 완료
+[2025-10-23 20:10:05] INFO: \u2713 추적 대상: 73개 종목
+[2025-10-23 20:10:05] INFO: \u2713 기존 시그널 로드: Summary 72개, History 1개
+[2025-10-23 20:10:05] INFO: 
+================================================================================
+[2025-10-23 20:10:05] INFO: 종목별 분석 시작
+[2025-10-23 20:10:05] INFO: ================================================================================
+[2025-10-23 20:10:05] INFO: 
+[1/73] 삼성전자 (005930) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:05] INFO:   [2025-10-23] 종가: 96,400원, 20일선: 90,345원
+[2025-10-23 20:10:05] INFO:   \U0001f4ca S20: 1,806,900, Close_D_19: 79,900, S19_next: 1,727,000
+[2025-10-23 20:10:05] INFO:   \U0001f3af 정확한 매수선: 1차 72,000, 2차 64,900, 3차 58,600
+[2025-10-23 20:10:05] INFO:   \U0001f4c8 기존 엔벨로프: 72,276원 (참고용)
+[2025-10-23 20:10:06] INFO: 
+[2/73] SK하이닉스 (000660) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:06] INFO:   [2025-10-23] 종가: 477,000원, 20일선: 404,875원
+[2025-10-23 20:10:06] INFO:   \U0001f4ca S20: 8,097,500, Close_D_19: 353,000, S19_next: 7,744,500
+[2025-10-23 20:10:06] INFO:   \U0001f3af 정확한 매수선: 1차 323,000, 2차 291,500, 3차 263,000
+[2025-10-23 20:10:06] INFO:   \U0001f4c8 기존 엔벨로프: 323,900원 (참고용)
+[2025-10-23 20:10:06] INFO: 
+[3/73] 두산에너빌리티 (034020) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:06] INFO:   [2025-10-23] 종가: 76,500원, 20일선: 71,310원
+[2025-10-23 20:10:06] INFO:   \U0001f4ca S20: 1,426,200, Close_D_19: 61,100, S19_next: 1,365,100
+[2025-10-23 20:10:06] INFO:   \U0001f3af 정확한 매수선: 1차 56,900, 2차 51,400, 3차 46,350
+[2025-10-23 20:10:06] INFO:   \U0001f4c8 기존 엔벨로프: 57,048원 (참고용)
+[2025-10-23 20:10:06] INFO: 
+[4/73] NAVER (035420) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:06] INFO:   [2025-10-23] 종가: 243,000원, 20일선: 253,075원
+[2025-10-23 20:10:06] INFO:   \U0001f4ca S20: 5,061,500, Close_D_19: 234,500, S19_next: 4,827,000
+[2025-10-23 20:10:06] INFO:   \U0001f3af 정확한 매수선: 1차 201,500, 2차 181,500, 3차 163,500
+[2025-10-23 20:10:06] INFO:   \U0001f4c8 기존 엔벨로프: 202,460원 (참고용)
+[2025-10-23 20:10:06] INFO: 
+[5/73] 한미반도체 (042700) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:07] INFO:   [2025-10-23] 종가: 148,600원, 20일선: 117,620원
+[2025-10-23 20:10:07] INFO:   \U0001f4ca S20: 2,352,400, Close_D_19: 93,500, S19_next: 2,258,900
+[2025-10-23 20:10:07] INFO:   \U0001f3af 정확한 매수선: 1차 94,200, 2차 84,900, 3차 76,600
+[2025-10-23 20:10:07] INFO:   \U0001f4c8 기존 엔벨로프: 94,096원 (참고용)
+[2025-10-23 20:10:07] INFO: 
+[6/73] 에코프로 (086520) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:07] INFO:   [2025-10-23] 종가: 81,500원, 20일선: 56,875원
+[2025-10-23 20:10:07] INFO:   \U0001f4ca S20: 1,137,500, Close_D_19: 49,850, S19_next: 1,087,650
+[2025-10-23 20:10:07] INFO:   \U0001f3af 정확한 매수선: 1차 45,350, 2차 40,900, 3차 36,900
+[2025-10-23 20:10:07] INFO:   \U0001f4c8 기존 엔벨로프: 45,500원 (참고용)
+[2025-10-23 20:10:07] INFO: 
+[7/73] 한화오션 (042660) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:07] INFO:   [2025-10-23] 종가: 135,000원, 20일선: 112,155원
+[2025-10-23 20:10:07] INFO:   \U0001f4ca S20: 2,243,100, Close_D_19: 111,600, S19_next: 2,131,500
+[2025-10-23 20:10:07] INFO:   \U0001f3af 정확한 매수선: 1차 88,900, 2차 80,200, 3차 72,300
+[2025-10-23 20:10:07] INFO:   \U0001f4c8 기존 엔벨로프: 89,724원 (참고용)
+[2025-10-23 20:10:07] INFO: 
+[8/73] 현대차 (005380) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:07] INFO:   [2025-10-23] 종가: 250,500원, 20일선: 227,750원
+[2025-10-23 20:10:07] INFO:   \U0001f4ca S20: 4,555,000, Close_D_19: 214,500, S19_next: 4,340,500
+[2025-10-23 20:10:07] INFO:   \U0001f3af 정확한 매수선: 1차 180,900, 2차 163,000, 3차 146,800
+[2025-10-23 20:10:07] INFO:   \U0001f4c8 기존 엔벨로프: 182,200원 (참고용)
+[2025-10-23 20:10:08] INFO: 
+[9/73] 에코프로비엠 (247540) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:08] INFO:   [2025-10-23] 종가: 157,900원, 20일선: 129,250원
+[2025-10-23 20:10:08] INFO:   \U0001f4ca S20: 2,585,000, Close_D_19: 118,900, S19_next: 2,466,100
+[2025-10-23 20:10:08] INFO:   \U0001f3af 정확한 매수선: 1차 102,800, 2차 92,700, 3차 83,600
+[2025-10-23 20:10:08] INFO:   \U0001f4c8 기존 엔벨로프: 103,400원 (참고용)
+[2025-10-23 20:10:08] INFO: 
+[10/73] 삼성SDI (006400) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:08] INFO:   [2025-10-23] 종가: 257,500원, 20일선: 222,825원
+[2025-10-23 20:10:08] INFO:   \U0001f4ca S20: 4,456,500, Close_D_19: 204,000, S19_next: 4,252,500
+[2025-10-23 20:10:08] INFO:   \U0001f3af 정확한 매수선: 1차 177,200, 2차 159,600, 3차 143,800
+[2025-10-23 20:10:08] INFO:   \U0001f4c8 기존 엔벨로프: 178,260원 (참고용)
+[2025-10-23 20:10:08] INFO: 
+[11/73] LG화학 (051910) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:08] INFO:   [2025-10-23] 종가: 382,500원, 20일선: 307,275원
+[2025-10-23 20:10:08] INFO:   \U0001f4ca S20: 6,145,500, Close_D_19: 293,500, S19_next: 5,852,000
+[2025-10-23 20:10:08] INFO:   \U0001f3af 정확한 매수선: 1차 244,000, 2차 220,500, 3차 198,600
+[2025-10-23 20:10:08] INFO:   \U0001f4c8 기존 엔벨로프: 245,820원 (참고용)
+[2025-10-23 20:10:08] INFO: 
+[12/73] 에코프로머티 (450080) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:08] INFO:   [2025-10-23] 종가: 65,100원, 20일선: 54,010원
+[2025-10-23 20:10:08] INFO:   \U0001f4ca S20: 1,080,200, Close_D_19: 51,500, S19_next: 1,028,700
+[2025-10-23 20:10:08] INFO:   \U0001f3af 정확한 매수선: 1차 42,900, 2차 38,700, 3차 34,900
+[2025-10-23 20:10:08] INFO:   \U0001f4c8 기존 엔벨로프: 43,208원 (참고용)
+[2025-10-23 20:10:09] INFO: 
+[13/73] LG에너지솔루션 (373220) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:09] INFO:   [2025-10-23] 종가: 446,000원, 20일선: 381,125원
+[2025-10-23 20:10:09] INFO:   \U0001f4ca S20: 7,622,500, Close_D_19: 349,500, S19_next: 7,273,000
+[2025-10-23 20:10:09] INFO:   \U0001f3af 정확한 매수선: 1차 303,500, 2차 274,000, 3차 247,500
+[2025-10-23 20:10:09] INFO:   \U0001f4c8 기존 엔벨로프: 304,900원 (참고용)
+[2025-10-23 20:10:09] INFO: 
+[14/73] 한국전력 (015760) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:09] INFO:   [2025-10-23] 종가: 42,200원, 20일선: 38,228원
+[2025-10-23 20:10:09] INFO:   \U0001f4ca S20: 764,550, Close_D_19: 35,450, S19_next: 729,100
+[2025-10-23 20:10:09] INFO:   \U0001f3af 정확한 매수선: 1차 30,400, 2차 27,450, 3차 24,800
+[2025-10-23 20:10:09] INFO:   \U0001f4c8 기존 엔벨로프: 30,582원 (참고용)
+[2025-10-23 20:10:09] INFO: 
+[15/73] 포스코퓨처엠 (003670) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:09] INFO:   [2025-10-23] 종가: 201,000원, 20일선: 163,185원
+[2025-10-23 20:10:09] INFO:   \U0001f4ca S20: 3,263,700, Close_D_19: 141,200, S19_next: 3,122,500
+[2025-10-23 20:10:09] INFO:   \U0001f3af 정확한 매수선: 1차 130,200, 2차 117,300, 3차 105,700
+[2025-10-23 20:10:09] INFO:   \U0001f4c8 기존 엔벨로프: 130,548원 (참고용)
+[2025-10-23 20:10:09] INFO: 
+[16/73] 현대로템 (064350) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:10] INFO:   [2025-10-23] 종가: 241,000원, 20일선: 218,350원
+[2025-10-23 20:10:10] INFO:   \U0001f4ca S20: 4,367,000, Close_D_19: 228,000, S19_next: 4,139,000
+[2025-10-23 20:10:10] INFO:   \U0001f3af 정확한 매수선: 1차 172,500, 2차 155,400, 3차 140,000
+[2025-10-23 20:10:10] INFO:   \U0001f4c8 기존 엔벨로프: 174,680원 (참고용)
+[2025-10-23 20:10:10] INFO: 
+[17/73] 카카오 (035720) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:10] INFO:   [2025-10-23] 종가: 59,300원, 20일선: 61,090원
+[2025-10-23 20:10:10] INFO:   \U0001f4ca S20: 1,221,800, Close_D_19: 67,000, S19_next: 1,154,800
+[2025-10-23 20:10:10] INFO:   \U0001f3af 정확한 매수선: 1차 48,150, 2차 43,400, 3차 39,150
+[2025-10-23 20:10:10] INFO:   \U0001f4c8 기존 엔벨로프: 48,872원 (참고용)
+[2025-10-23 20:10:10] INFO: 
+[18/73] 엘앤에프 (066970) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:10] INFO:   [2025-10-23] 종가: 113,000원, 20일선: 85,930원
+[2025-10-23 20:10:10] INFO:   \U0001f4ca S20: 1,718,600, Close_D_19: 74,300, S19_next: 1,644,300
+[2025-10-23 20:10:10] INFO:   \U0001f3af 정확한 매수선: 1차 68,600, 2차 61,900, 3차 55,900
+[2025-10-23 20:10:10] INFO:   \U0001f4c8 기존 엔벨로프: 68,744원 (참고용)
+[2025-10-23 20:10:10] INFO: 
+[19/73] 두산 (000150) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:10] INFO:   [2025-10-23] 종가: 775,000원, 20일선: 620,500원
+[2025-10-23 20:10:10] INFO:   \U0001f4ca S20: 12,410,000, Close_D_19: 598,000, S19_next: 11,812,000
+[2025-10-23 20:10:10] INFO:   \U0001f3af 정확한 매수선: 1차 492,500, 2차 444,000, 3차 400,500
+[2025-10-23 20:10:10] INFO:   \U0001f4c8 기존 엔벨로프: 496,400원 (참고용)
+[2025-10-23 20:10:11] INFO: 
+[20/73] 한라캐스트 (125490) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:11] INFO:   [2025-10-23] 종가: 13,350원, 20일선: 9,628원
+[2025-10-23 20:10:11] INFO:   \U0001f4ca S20: 192,570, Close_D_19: 6,920, S19_next: 185,650
+[2025-10-23 20:10:11] INFO:   \U0001f3af 정확한 매수선: 1차 7,740, 2차 6,980, 3차 6,300
+[2025-10-23 20:10:11] INFO:   \U0001f4c8 기존 엔벨로프: 7,703원 (참고용)
+[2025-10-23 20:10:11] INFO: 
+[21/73] 휴림로봇 (090710) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:11] INFO:   [2025-10-23] 종가: 6,000원, 20일선: 4,050원
+[2025-10-23 20:10:11] INFO:   \U0001f4ca S20: 81,005, Close_D_19: 3,500, S19_next: 77,505
+[2025-10-23 20:10:11] INFO:   \U0001f3af 정확한 매수선: 1차 3,230, 2차 2,915, 3차 2,630
+[2025-10-23 20:10:11] INFO:   \U0001f4c8 기존 엔벨로프: 3,240원 (참고용)
+[2025-10-23 20:10:11] INFO: 
+[22/73] 클로봇 (466100) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:11] INFO:   [2025-10-23] 종가: 38,800원, 20일선: 35,008원
+[2025-10-23 20:10:11] INFO:   \U0001f4ca S20: 700,150, Close_D_19: 29,150, S19_next: 671,000
+[2025-10-23 20:10:11] INFO:   \U0001f3af 정확한 매수선: 1차 28,000, 2차 25,250, 3차 22,800
+[2025-10-23 20:10:11] INFO:   \U0001f4c8 기존 엔벨로프: 28,006원 (참고용)
+[2025-10-23 20:10:11] INFO: 
+[23/73] 로보티즈 (108490) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:11] INFO:   [2025-10-23] 종가: 187,000원, 20일선: 171,036원
+[2025-10-23 20:10:11] INFO:   \U0001f4ca S20: 3,420,724, Close_D_19: 132,632, S19_next: 3,288,092
+[2025-10-23 20:10:11] INFO:   \U0001f3af 정확한 매수선: 1차 137,100, 2차 123,500, 3차 111,300
+[2025-10-23 20:10:11] INFO:   \U0001f4c8 기존 엔벨로프: 136,829원 (참고용)
+[2025-10-23 20:10:12] INFO: 
+[24/73] 삼성전자우 (005935) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:12] INFO:   [2025-10-23] 종가: 76,400원, 20일선: 71,055원
+[2025-10-23 20:10:12] INFO:   \U0001f4ca S20: 1,421,100, Close_D_19: 64,200, S19_next: 1,356,900
+[2025-10-23 20:10:12] INFO:   \U0001f3af 정확한 매수선: 1차 56,600, 2차 51,100, 3차 46,050
+[2025-10-23 20:10:12] INFO:   \U0001f4c8 기존 엔벨로프: 56,844원 (참고용)
+[2025-10-23 20:10:12] INFO: 
+[25/73] 일동제약 (249420) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:12] INFO:   [2025-10-23] 종가: 20,600원, 20일선: 25,678원
+[2025-10-23 20:10:12] INFO:   \U0001f4ca S20: 513,550, Close_D_19: 30,050, S19_next: 483,500
+[2025-10-23 20:10:12] INFO:   \U0001f3af 정확한 매수선: 1차 20,150, 2차 18,150, 3차 16,350
+[2025-10-23 20:10:12] INFO:   \U0001f4c8 기존 엔벨로프: 20,542원 (참고용)
+[2025-10-23 20:10:12] INFO:   \U0001f514 +3% 매도선까지 5.0%
+[2025-10-23 20:10:12] INFO: 
+[26/73] 우리기술투자 (041190) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:12] INFO:   [2025-10-23] 종가: 8,730원, 20일선: 10,370원
+[2025-10-23 20:10:12] INFO:   \U0001f4ca S20: 207,390, Close_D_19: 11,230, S19_next: 196,160
+[2025-10-23 20:10:12] INFO:   \U0001f3af 정확한 매수선: 1차 8,180, 2차 7,380, 3차 6,660
+[2025-10-23 20:10:12] INFO:   \U0001f4c8 기존 엔벨로프: 8,296원 (참고용)
+[2025-10-23 20:10:12] INFO:   \U0001f514 1차 매수선까지 6.7% (접근 중!)
+[2025-10-23 20:10:13] INFO: 
+[27/73] NHN KCP (060250) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:13] INFO:   [2025-10-23] 종가: 15,820원, 20일선: 17,158원
+[2025-10-23 20:10:13] INFO:   \U0001f4ca S20: 343,150, Close_D_19: 16,270, S19_next: 326,880
+[2025-10-23 20:10:13] INFO:   \U0001f3af 정확한 매수선: 1차 13,620, 2차 12,270, 3차 11,060
+[2025-10-23 20:10:13] INFO:   \U0001f4c8 기존 엔벨로프: 13,726원 (참고용)
+[2025-10-23 20:10:13] INFO: 
+[28/73] 레인보우로보틱스 (277810) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:13] INFO:   [2025-10-23] 종가: 332,000원, 20일선: 324,625원
+[2025-10-23 20:10:13] INFO:   \U0001f4ca S20: 6,492,500, Close_D_19: 310,500, S19_next: 6,182,000
+[2025-10-23 20:10:13] INFO:   \U0001f3af 정확한 매수선: 1차 258,000, 2차 233,000, 3차 210,500
+[2025-10-23 20:10:13] INFO:   \U0001f4c8 기존 엔벨로프: 259,700원 (참고용)
+[2025-10-23 20:10:13] INFO: 
+[29/73] 알테오젠 (196170) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:13] INFO:   [2025-10-23] 종가: 452,500원, 20일선: 456,875원
+[2025-10-23 20:10:13] INFO:   \U0001f4ca S20: 9,137,500, Close_D_19: 471,500, S19_next: 8,666,000
+[2025-10-23 20:10:13] INFO:   \U0001f3af 정확한 매수선: 1차 361,500, 2차 326,000, 3차 294,000
+[2025-10-23 20:10:13] INFO:   \U0001f4c8 기존 엔벨로프: 365,500원 (참고용)
+[2025-10-23 20:10:13] INFO: 
+[30/73] 셀트리온 (068270) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:14] INFO:   [2025-10-23] 종가: 172,900원, 20일선: 174,930원
+[2025-10-23 20:10:14] INFO:   \U0001f4ca S20: 3,498,600, Close_D_19: 170,000, S19_next: 3,328,600
+[2025-10-23 20:10:14] INFO:   \U0001f3af 정확한 매수선: 1차 138,700, 2차 125,000, 3차 112,600
+[2025-10-23 20:10:14] INFO:   \U0001f4c8 기존 엔벨로프: 139,944원 (참고용)
+[2025-10-23 20:10:14] INFO: 
+[31/73] 디앤디파마텍 (347850) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:14] INFO:   [2025-10-23] 종가: 169,700원, 20일선: 186,035원
+[2025-10-23 20:10:14] INFO:   \U0001f4ca S20: 3,720,700, Close_D_19: 165,900, S19_next: 3,554,800
+[2025-10-23 20:10:14] INFO:   \U0001f3af 정확한 매수선: 1차 148,200, 2차 133,500, 3차 120,300
+[2025-10-23 20:10:14] INFO:   \U0001f4c8 기존 엔벨로프: 148,828원 (참고용)
+[2025-10-23 20:10:14] INFO: 
+[32/73] 삼천당제약 (000250) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:14] INFO:   [2025-10-23] 종가: 200,500원, 20일선: 216,440원
+[2025-10-23 20:10:14] INFO:   \U0001f4ca S20: 4,328,800, Close_D_19: 227,000, S19_next: 4,101,800
+[2025-10-23 20:10:14] INFO:   \U0001f3af 정확한 매수선: 1차 171,000, 2차 154,000, 3차 138,700
+[2025-10-23 20:10:14] INFO:   \U0001f4c8 기존 엔벨로프: 173,152원 (참고용)
+[2025-10-23 20:10:14] INFO: 
+[33/73] 다날 (064260) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:15] INFO:   [2025-10-23] 종가: 8,990원, 20일선: 9,798원
+[2025-10-23 20:10:15] INFO:   \U0001f4ca S20: 195,950, Close_D_19: 11,090, S19_next: 184,860
+[2025-10-23 20:10:15] INFO:   \U0001f3af 정확한 매수선: 1차 7,710, 2차 6,950, 3차 6,270
+[2025-10-23 20:10:15] INFO:   \U0001f4c8 기존 엔벨로프: 7,838원 (참고용)
+[2025-10-23 20:10:15] INFO: 
+[34/73] 로보스타 (090360) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:15] INFO:   [2025-10-23] 종가: 67,600원, 20일선: 55,048원
+[2025-10-23 20:10:15] INFO:   \U0001f4ca S20: 1,100,950, Close_D_19: 47,250, S19_next: 1,053,700
+[2025-10-23 20:10:15] INFO:   \U0001f3af 정확한 매수선: 1차 43,950, 2차 39,650, 3차 35,750
+[2025-10-23 20:10:15] INFO:   \U0001f4c8 기존 엔벨로프: 44,038원 (참고용)
+[2025-10-23 20:10:15] INFO: 
+[35/73] 한국항공우주 (047810) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:15] INFO:   [2025-10-23] 종가: 101,400원, 20일선: 103,970원
+[2025-10-23 20:10:15] INFO:   \U0001f4ca S20: 2,079,400, Close_D_19: 109,400, S19_next: 1,970,000
+[2025-10-23 20:10:15] INFO:   \U0001f3af 정확한 매수선: 1차 82,100, 2차 74,000, 3차 66,700
+[2025-10-23 20:10:15] INFO:   \U0001f4c8 기존 엔벨로프: 83,176원 (참고용)
+[2025-10-23 20:10:15] INFO: 
+[36/73] 지투지바이오 (456160) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:15] INFO:   [2025-10-23] 종가: 179,700원, 20일선: 198,050원
+[2025-10-23 20:10:15] INFO:   \U0001f4ca S20: 3,961,000, Close_D_19: 236,500, S19_next: 3,724,500
+[2025-10-23 20:10:15] INFO:   \U0001f3af 정확한 매수선: 1차 155,200, 2차 139,800, 3차 126,000
+[2025-10-23 20:10:15] INFO:   \U0001f4c8 기존 엔벨로프: 158,440원 (참고용)
+[2025-10-23 20:10:16] INFO: 
+[37/73] 농심 (004370) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:16] INFO:   [2025-10-23] 종가: 435,000원, 20일선: 440,500원
+[2025-10-23 20:10:16] INFO:   \U0001f4ca S20: 8,810,000, Close_D_19: 474,500, S19_next: 8,335,500
+[2025-10-23 20:10:16] INFO:   \U0001f3af 정확한 매수선: 1차 347,500, 2차 313,500, 3차 283,000
+[2025-10-23 20:10:16] INFO:   \U0001f4c8 기존 엔벨로프: 352,400원 (참고용)
+[2025-10-23 20:10:16] INFO: 
+[38/73] SK오션플랜트 (100090) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:16] INFO:   [2025-10-23] 종가: 22,350원, 20일선: 23,672원
+[2025-10-23 20:10:16] INFO:   \U0001f4ca S20: 473,450, Close_D_19: 25,450, S19_next: 448,000
+[2025-10-23 20:10:16] INFO:   \U0001f3af 정확한 매수선: 1차 18,670, 2차 16,820, 3차 15,150
+[2025-10-23 20:10:16] INFO:   \U0001f4c8 기존 엔벨로프: 18,938원 (참고용)
+[2025-10-23 20:10:16] INFO: 
+[39/73] HJ중공업 (097230) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:16] INFO:   [2025-10-23] 종가: 28,350원, 20일선: 26,878원
+[2025-10-23 20:10:16] INFO:   \U0001f4ca S20: 537,550, Close_D_19: 29,150, S19_next: 508,400
+[2025-10-23 20:10:16] INFO:   \U0001f3af 정확한 매수선: 1차 21,200, 2차 19,090, 3차 17,200
+[2025-10-23 20:10:16] INFO:   \U0001f4c8 기존 엔벨로프: 21,502원 (참고용)
+[2025-10-23 20:10:17] INFO: 
+[40/73] 세진중공업 (075580) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:17] INFO:   [2025-10-23] 종가: 22,500원, 20일선: 21,322원
+[2025-10-23 20:10:17] INFO:   \U0001f4ca S20: 426,440, Close_D_19: 22,800, S19_next: 403,640
+[2025-10-23 20:10:17] INFO:   \U0001f3af 정확한 매수선: 1차 16,820, 2차 15,150, 3차 13,650
+[2025-10-23 20:10:17] INFO:   \U0001f4c8 기존 엔벨로프: 17,058원 (참고용)
+[2025-10-23 20:10:17] INFO: 
+[41/73] 엘앤씨바이오 (290650) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:17] INFO:   [2025-10-23] 종가: 51,600원, 20일선: 52,250원
+[2025-10-23 20:10:17] INFO:   \U0001f4ca S20: 1,045,000, Close_D_19: 54,300, S19_next: 990,700
+[2025-10-23 20:10:17] INFO:   \U0001f3af 정확한 매수선: 1차 41,300, 2차 37,250, 3차 33,600
+[2025-10-23 20:10:17] INFO:   \U0001f4c8 기존 엔벨로프: 41,800원 (참고용)
+[2025-10-23 20:10:17] INFO: 
+[42/73] 한화엔진 (082740) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:17] INFO:   [2025-10-23] 종가: 48,600원, 20일선: 45,788원
+[2025-10-23 20:10:17] INFO:   \U0001f4ca S20: 915,750, Close_D_19: 42,850, S19_next: 872,900
+[2025-10-23 20:10:17] INFO:   \U0001f3af 정확한 매수선: 1차 36,400, 2차 32,850, 3차 29,650
+[2025-10-23 20:10:17] INFO:   \U0001f4c8 기존 엔벨로프: 36,630원 (참고용)
+[2025-10-23 20:10:18] INFO: 
+[43/73] 현대힘스 (460930) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:18] INFO:   [2025-10-23] 종가: 22,750원, 20일선: 24,685원
+[2025-10-23 20:10:18] INFO:   \U0001f4ca S20: 493,700, Close_D_19: 27,250, S19_next: 466,450
+[2025-10-23 20:10:18] INFO:   \U0001f3af 정확한 매수선: 1차 19,440, 2차 17,510, 3차 15,770
+[2025-10-23 20:10:18] INFO:   \U0001f4c8 기존 엔벨로프: 19,748원 (참고용)
+[2025-10-23 20:10:18] INFO: 
+[44/73] HD한국조선해양 (009540) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:18] INFO:   [2025-10-23] 종가: 449,000원, 20일선: 417,000원
+[2025-10-23 20:10:18] INFO:   \U0001f4ca S20: 8,340,000, Close_D_19: 408,000, S19_next: 7,932,000
+[2025-10-23 20:10:18] INFO:   \U0001f3af 정확한 매수선: 1차 330,500, 2차 298,000, 3차 269,000
+[2025-10-23 20:10:18] INFO:   \U0001f4c8 기존 엔벨로프: 333,600원 (참고용)
+[2025-10-23 20:10:18] INFO: 
+[45/73] HD현대미포 (010620) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:18] INFO:   [2025-10-23] 종가: 229,500원, 20일선: 204,510원
+[2025-10-23 20:10:18] INFO:   \U0001f4ca S20: 4,090,200, Close_D_19: 196,800, S19_next: 3,893,400
+[2025-10-23 20:10:18] INFO:   \U0001f3af 정확한 매수선: 1차 162,300, 2차 146,200, 3차 131,700
+[2025-10-23 20:10:18] INFO:   \U0001f4c8 기존 엔벨로프: 163,608원 (참고용)
+[2025-10-23 20:10:19] INFO: 
+[46/73] 삼성중공업 (010140) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:19] INFO:   [2025-10-23] 종가: 23,900원, 20일선: 22,112원
+[2025-10-23 20:10:19] INFO:   \U0001f4ca S20: 442,250, Close_D_19: 21,400, S19_next: 420,850
+[2025-10-23 20:10:19] INFO:   \U0001f3af 정확한 매수선: 1차 17,540, 2차 15,800, 3차 14,230
+[2025-10-23 20:10:19] INFO:   \U0001f4c8 기존 엔벨로프: 17,690원 (참고용)
+[2025-10-23 20:10:19] INFO: 
+[47/73] 효성중공업 (298040) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:19] INFO:   [2025-10-23] 종가: 1,838,000원, 20일선: 1,497,700원
+[2025-10-23 20:10:19] INFO:   \U0001f4ca S20: 29,954,000, Close_D_19: 1,417,000, S19_next: 28,537,000
+[2025-10-23 20:10:19] INFO:   \U0001f3af 정확한 매수선: 1차 1,190,000, 2차 1,072,000, 3차 966,000
+[2025-10-23 20:10:19] INFO:   \U0001f4c8 기존 엔벨로프: 1,198,160원 (참고용)
+[2025-10-23 20:10:19] INFO: 
+[48/73] LIG넥스원 (079550) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:19] INFO:   [2025-10-23] 종가: 465,500원, 20일선: 478,275원
+[2025-10-23 20:10:19] INFO:   \U0001f4ca S20: 9,565,500, Close_D_19: 513,000, S19_next: 9,052,500
+[2025-10-23 20:10:19] INFO:   \U0001f3af 정확한 매수선: 1차 377,500, 2차 340,500, 3차 307,000
+[2025-10-23 20:10:19] INFO:   \U0001f4c8 기존 엔벨로프: 382,620원 (참고용)
+[2025-10-23 20:10:20] INFO: 
+[49/73] 에스엔시스 (0008Z0) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:20] INFO:   [2025-10-23] 종가: 42,800원, 20일선: 41,428원
+[2025-10-23 20:10:20] INFO:   \U0001f4ca S20: 828,550, Close_D_19: 41,100, S19_next: 787,450
+[2025-10-23 20:10:20] INFO:   \U0001f3af 정확한 매수선: 1차 32,850, 2차 29,650, 3차 26,750
+[2025-10-23 20:10:20] INFO:   \U0001f4c8 기존 엔벨로프: 33,142원 (참고용)
+[2025-10-23 20:10:20] INFO: 
+[50/73] 삼양컴텍 (484590) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:20] INFO:   [2025-10-23] 종가: 17,230원, 20일선: 17,851원
+[2025-10-23 20:10:20] INFO:   \U0001f4ca S20: 357,020, Close_D_19: 19,530, S19_next: 337,490
+[2025-10-23 20:10:20] INFO:   \U0001f3af 정확한 매수선: 1차 14,070, 2차 12,680, 3차 11,430
+[2025-10-23 20:10:20] INFO:   \U0001f4c8 기존 엔벨로프: 14,281원 (참고용)
+[2025-10-23 20:10:20] INFO: 
+[51/73] 에이비엘바이오 (298380) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:20] INFO:   [2025-10-23] 종가: 85,300원, 20일선: 93,300원
+[2025-10-23 20:10:20] INFO:   \U0001f4ca S20: 1,866,000, Close_D_19: 107,700, S19_next: 1,758,300
+[2025-10-23 20:10:20] INFO:   \U0001f3af 정확한 매수선: 1차 73,300, 2차 66,100, 3차 59,600
+[2025-10-23 20:10:20] INFO:   \U0001f4c8 기존 엔벨로프: 74,640원 (참고용)
+[2025-10-23 20:10:21] INFO: 
+[52/73] LG디스플레이 (034220) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:21] INFO:   [2025-10-23] 종가: 14,150원, 20일선: 14,240원
+[2025-10-23 20:10:21] INFO:   \U0001f4ca S20: 284,790, Close_D_19: 13,070, S19_next: 271,720
+[2025-10-23 20:10:21] INFO:   \U0001f3af 정확한 매수선: 1차 11,330, 2차 10,210, 3차 9,200
+[2025-10-23 20:10:21] INFO:   \U0001f4c8 기존 엔벨로프: 11,392원 (참고용)
+[2025-10-23 20:10:21] INFO: 
+[53/73] 대한조선 (439260) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:21] INFO:   [2025-10-23] 종가: 77,400원, 20일선: 78,920원
+[2025-10-23 20:10:21] INFO:   \U0001f4ca S20: 1,578,400, Close_D_19: 80,600, S19_next: 1,497,800
+[2025-10-23 20:10:21] INFO:   \U0001f3af 정확한 매수선: 1차 62,500, 2차 56,400, 3차 50,900
+[2025-10-23 20:10:21] INFO:   \U0001f4c8 기존 엔벨로프: 63,136원 (참고용)
+[2025-10-23 20:10:21] INFO: 
+[54/73] 에이피알 (278470) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:21] INFO:   [2025-10-23] 종가: 244,000원, 20일선: 239,475원
+[2025-10-23 20:10:21] INFO:   \U0001f4ca S20: 4,789,500, Close_D_19: 223,000, S19_next: 4,566,500
+[2025-10-23 20:10:21] INFO:   \U0001f3af 정확한 매수선: 1차 190,300, 2차 171,400, 3차 154,400
+[2025-10-23 20:10:21] INFO:   \U0001f4c8 기존 엔벨로프: 191,580원 (참고용)
+[2025-10-23 20:10:22] INFO: 
+[55/73] SK바이오팜 (326030) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:22] INFO:   [2025-10-23] 종가: 106,200원, 20일선: 104,995원
+[2025-10-23 20:10:22] INFO:   \U0001f4ca S20: 2,099,900, Close_D_19: 113,900, S19_next: 1,986,000
+[2025-10-23 20:10:22] INFO:   \U0001f3af 정확한 매수선: 1차 82,800, 2차 74,700, 3차 67,400
+[2025-10-23 20:10:22] INFO:   \U0001f4c8 기존 엔벨로프: 83,996원 (참고용)
+[2025-10-23 20:10:22] INFO: 
+[56/73] 한화에어로스페이스 (012450) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:22] INFO:   [2025-10-23] 종가: 1,046,000원, 20일선: 1,016,650원
+[2025-10-23 20:10:22] INFO:   \U0001f4ca S20: 20,333,000, Close_D_19: 1,026,000, S19_next: 19,307,000
+[2025-10-23 20:10:22] INFO:   \U0001f3af 정확한 매수선: 1차 805,000, 2차 726,000, 3차 655,000
+[2025-10-23 20:10:22] INFO:   \U0001f4c8 기존 엔벨로프: 813,320원 (참고용)
+[2025-10-23 20:10:22] INFO: 
+[57/73] 한화시스템 (272210) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:22] INFO:   [2025-10-23] 종가: 55,900원, 20일선: 56,775원
+[2025-10-23 20:10:22] INFO:   \U0001f4ca S20: 1,135,500, Close_D_19: 59,900, S19_next: 1,075,600
+[2025-10-23 20:10:22] INFO:   \U0001f3af 정확한 매수선: 1차 44,850, 2차 40,450, 3차 36,500
+[2025-10-23 20:10:22] INFO:   \U0001f4c8 기존 엔벨로프: 45,420원 (참고용)
+[2025-10-23 20:10:23] INFO: 
+[58/73] 한화솔루션 (009830) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:23] INFO:   [2025-10-23] 종가: 30,600원, 20일선: 29,172원
+[2025-10-23 20:10:23] INFO:   \U0001f4ca S20: 583,450, Close_D_19: 29,800, S19_next: 553,650
+[2025-10-23 20:10:23] INFO:   \U0001f3af 정확한 매수선: 1차 23,100, 2차 20,850, 3차 18,780
+[2025-10-23 20:10:23] INFO:   \U0001f4c8 기존 엔벨로프: 23,338원 (참고용)
+[2025-10-23 20:10:23] INFO: 
+[59/73] 삼성전기 (009150) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:23] INFO:   [2025-10-23] 종가: 221,500원, 20일선: 203,085원
+[2025-10-23 20:10:23] INFO:   \U0001f4ca S20: 4,061,700, Close_D_19: 196,200, S19_next: 3,865,500
+[2025-10-23 20:10:23] INFO:   \U0001f3af 정확한 매수선: 1차 161,100, 2차 145,100, 3차 130,700
+[2025-10-23 20:10:23] INFO:   \U0001f4c8 기존 엔벨로프: 162,468원 (참고용)
+[2025-10-23 20:10:23] INFO: 
+[60/73] 한화비전 (489790) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:23] INFO:   [2025-10-23] 종가: 51,700원, 20일선: 54,245원
+[2025-10-23 20:10:23] INFO:   \U0001f4ca S20: 1,084,900, Close_D_19: 59,300, S19_next: 1,025,600
+[2025-10-23 20:10:23] INFO:   \U0001f3af 정확한 매수선: 1차 42,750, 2차 38,550, 3차 34,750
+[2025-10-23 20:10:23] INFO:   \U0001f4c8 기존 엔벨로프: 43,396원 (참고용)
+[2025-10-23 20:10:24] INFO: 
+[61/73] HD현대인프라코어 (042670) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:24] INFO:   [2025-10-23] 종가: 17,020원, 20일선: 15,448원
+[2025-10-23 20:10:24] INFO:   \U0001f4ca S20: 308,950, Close_D_19: 16,660, S19_next: 292,290
+[2025-10-23 20:10:24] INFO:   \U0001f3af 정확한 매수선: 1차 12,180, 2차 10,980, 3차 9,900
+[2025-10-23 20:10:24] INFO:   \U0001f4c8 기존 엔벨로프: 12,358원 (참고용)
+[2025-10-23 20:10:24] INFO: 
+[62/73] 도우인시스 (484120) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:24] INFO:   [2025-10-23] 종가: 28,750원, 20일선: 29,928원
+[2025-10-23 20:10:24] INFO:   \U0001f4ca S20: 598,550, Close_D_19: 31,150, S19_next: 567,400
+[2025-10-23 20:10:24] INFO:   \U0001f3af 정확한 매수선: 1차 23,650, 2차 21,350, 3차 19,230
+[2025-10-23 20:10:24] INFO:   \U0001f4c8 기존 엔벨로프: 23,942원 (참고용)
+[2025-10-23 20:10:24] INFO: 
+[63/73] KBI동양철관 (008970) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:24] INFO:   [2025-10-23] 종가: 2,720원, 20일선: 2,585원
+[2025-10-23 20:10:24] INFO:   \U0001f4ca S20: 51,700, Close_D_19: 2,635, S19_next: 49,065
+[2025-10-23 20:10:24] INFO:   \U0001f3af 정확한 매수선: 1차 2,045, 2차 1,842, 3차 1,659
+[2025-10-23 20:10:24] INFO:   \U0001f4c8 기존 엔벨로프: 2,068원 (참고용)
+[2025-10-23 20:10:25] INFO: 
+[64/73] YG PLUS (037270) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:25] INFO:   [2025-10-23] 종가: 6,510원, 20일선: 7,396원
+[2025-10-23 20:10:25] INFO:   \U0001f4ca S20: 147,910, Close_D_19: 8,610, S19_next: 139,300
+[2025-10-23 20:10:25] INFO:   \U0001f3af 정확한 매수선: 1차 5,810, 2차 5,240, 3차 4,725
+[2025-10-23 20:10:25] INFO:   \U0001f4c8 기존 엔벨로프: 5,916원 (참고용)
+[2025-10-23 20:10:25] INFO: 
+[65/73] 리가켐바이오 (141080) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:25] INFO:   [2025-10-23] 종가: 133,900원, 20일선: 144,815원
+[2025-10-23 20:10:25] INFO:   \U0001f4ca S20: 2,896,300, Close_D_19: 153,300, S19_next: 2,743,000
+[2025-10-23 20:10:25] INFO:   \U0001f3af 정확한 매수선: 1차 114,300, 2차 103,000, 3차 92,800
+[2025-10-23 20:10:25] INFO:   \U0001f4c8 기존 엔벨로프: 115,852원 (참고용)
+[2025-10-23 20:10:25] INFO: 
+[66/73] 쿠콘 (294570) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:25] INFO:   [2025-10-23] 종가: 37,150원, 20일선: 38,405원
+[2025-10-23 20:10:25] INFO:   \U0001f4ca S20: 768,100, Close_D_19: 38,100, S19_next: 730,000
+[2025-10-23 20:10:25] INFO:   \U0001f3af 정확한 매수선: 1차 30,450, 2차 27,500, 3차 24,800
+[2025-10-23 20:10:25] INFO:   \U0001f4c8 기존 엔벨로프: 30,724원 (참고용)
+[2025-10-23 20:10:26] INFO: 
+[67/73] 파인엠텍 (441270) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:26] INFO:   [2025-10-23] 종가: 9,010원, 20일선: 10,531원
+[2025-10-23 20:10:26] INFO:   \U0001f4ca S20: 210,620, Close_D_19: 12,640, S19_next: 197,980
+[2025-10-23 20:10:26] INFO:   \U0001f3af 정확한 매수선: 1차 8,250, 2차 7,440, 3차 6,710
+[2025-10-23 20:10:26] INFO:   \U0001f4c8 기존 엔벨로프: 8,425원 (참고용)
+[2025-10-23 20:10:26] INFO:   \U0001f514 1차 매수선까지 9.2% (접근 중!)
+[2025-10-23 20:10:26] INFO: 
+[68/73] SK스퀘어 (402340) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:26] INFO:   [2025-10-23] 종가: 251,500원, 20일선: 231,755원
+[2025-10-23 20:10:26] INFO:   \U0001f4ca S20: 4,635,100, Close_D_19: 215,000, S19_next: 4,420,100
+[2025-10-23 20:10:26] INFO:   \U0001f3af 정확한 매수선: 1차 184,200, 2차 165,900, 3차 149,500
+[2025-10-23 20:10:26] INFO:   \U0001f4c8 기존 엔벨로프: 185,404원 (참고용)
+[2025-10-23 20:10:26] INFO: 
+[69/73] POSCO홀딩스 (005490) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:26] INFO:   [2025-10-23] 종가: 306,000원, 20일선: 282,850원
+[2025-10-23 20:10:26] INFO:   \U0001f4ca S20: 5,657,000, Close_D_19: 283,000, S19_next: 5,374,000
+[2025-10-23 20:10:26] INFO:   \U0001f3af 정확한 매수선: 1차 224,000, 2차 202,500, 3차 182,400
+[2025-10-23 20:10:26] INFO:   \U0001f4c8 기존 엔벨로프: 226,280원 (참고용)
+[2025-10-23 20:10:27] INFO: 
+[70/73] HD현대건설기계 (267270) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:27] INFO:   [2025-10-23] 종가: 114,900원, 20일선: 96,975원
+[2025-10-23 20:10:27] INFO:   \U0001f4ca S20: 1,939,500, Close_D_19: 102,000, S19_next: 1,837,500
+[2025-10-23 20:10:27] INFO:   \U0001f3af 정확한 매수선: 1차 76,600, 2차 69,100, 3차 62,300
+[2025-10-23 20:10:27] INFO:   \U0001f4c8 기존 엔벨로프: 77,580원 (참고용)
+[2025-10-23 20:10:27] INFO: 
+[71/73] 한화 (000880) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:27] INFO:   [2025-10-23] 종가: 94,900원, 20일선: 86,775원
+[2025-10-23 20:10:27] INFO:   \U0001f4ca S20: 1,735,500, Close_D_19: 91,600, S19_next: 1,643,900
+[2025-10-23 20:10:27] INFO:   \U0001f3af 정확한 매수선: 1차 68,500, 2차 61,800, 3차 55,800
+[2025-10-23 20:10:27] INFO:   \U0001f4c8 기존 엔벨로프: 69,420원 (참고용)
+[2025-10-23 20:10:27] INFO: 
+[72/73] SK (034730) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:27] INFO:   [2025-10-23] 종가: 230,000원, 20일선: 220,375원
+[2025-10-23 20:10:27] INFO:   \U0001f4ca S20: 4,407,500, Close_D_19: 227,000, S19_next: 4,180,500
+[2025-10-23 20:10:27] INFO:   \U0001f3af 정확한 매수선: 1차 174,200, 2차 156,900, 3차 141,400
+[2025-10-23 20:10:27] INFO:   \U0001f4c8 기존 엔벨로프: 176,300원 (참고용)
+[2025-10-23 20:10:28] INFO: 
+[73/73] SK이노베이션 (096770) 분석 중...
+C:\Coding\S12\Trading_Signal_System.py:1005: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  if not df_history.empty and ticker in df_history["티커"].values:
+[2025-10-23 20:10:28] INFO:   [2025-10-23] 종가: 125,100원, 20일선: 108,560원
+[2025-10-23 20:10:28] INFO:   \U0001f4ca S20: 2,171,200, Close_D_19: 104,600, S19_next: 2,066,600
+[2025-10-23 20:10:28] INFO:   \U0001f3af 정확한 매수선: 1차 86,200, 2차 77,700, 3차 70,100
+[2025-10-23 20:10:28] INFO:   \U0001f4c8 기존 엔벨로프: 86,848원 (참고용)
+[2025-10-23 20:10:28] INFO: \u2713 Summary 저장 완료: 73개 종목
+[2025-10-23 20:10:28] INFO: \u2713 History 저장 완료: 1개 종목
+[2025-10-23 20:10:28] INFO: 
+================================================================================
+[2025-10-23 20:10:28] INFO: \U0001f514 알람: 3개
+[2025-10-23 20:10:28] INFO: ================================================================================
+[2025-10-23 20:10:28] INFO: \U0001f534 일동제약 (249420): +3% 매도선까지 5.0%
+[2025-10-23 20:10:28] INFO: \U0001f534 우리기술투자 (041190): 1차 매수선까지 6.7% (접근 중!)
+[2025-10-23 20:10:28] INFO: \U0001f534 파인엠텍 (441270): 1차 매수선까지 9.2% (접근 중!)
+[2025-10-23 20:10:29] INFO: \u2713 텔레그램 전송 성공: me
+[2025-10-23 20:10:30] INFO: \u2713 텔레그램 전송 성공: yoonjoo
+[2025-10-23 20:10:31] INFO: \u2713 텔레그램 전송 성공: minjeong
+[2025-10-23 20:10:32] INFO: \u2713 텔레그램 전송 성공: jumeoni
+[2025-10-23 20:10:32] INFO: \u2713 텔레그램 일일 리포트 전송 완료
+[2025-10-23 20:10:32] INFO: 
+================================================================================
+[2025-10-23 20:10:32] INFO: 완료
+[2025-10-23 20:10:32] INFO: 분석: 73개 종목
+[2025-10-23 20:10:32] INFO: 알람: 3개
+[2025-10-23 20:10:32] INFO: ================================================================================
+Step 2 completed successfully 
+Completion Time: 2025-10-23 20:10:33.00 
+======================================== 
+SUCCESS: All steps completed successfully 

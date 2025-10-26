@@ -1,0 +1,18 @@
+======================================== 
+S12 Trading System - Daily Run (20:10) 
+Start Time: 2025-10-20 20:10:01.54 
+======================================== 
+[2/2] Trading Signal Generation... 
+Step 1 completed successfully 
+Traceback (most recent call last):
+  File "C:\Coding\S12\Trading_Signal_System.py", line 16, in <module>
+    import pandas as pd
+  File "C:\Program Files (x86)\Python311\Lib\site-packages\pandas\__init__.py", line 16, in <module>
+    raise ImportError(
+ImportError: Unable to import required dependencies:
+numpy: No module named 'numpy'
+pytz: No module named 'pytz'
+dateutil: No module named 'dateutil'
+ERROR: Trading Signal System failed! 
+ERROR: Process failed at 2025-10-20 20:10:01.78 
+======================================== 
