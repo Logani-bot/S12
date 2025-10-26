@@ -165,13 +165,23 @@ class CryptoRealtimeMonitor:
                     except (ValueError, TypeError):
                         current_price = 0
                 
+                # H값 처리
+                h_value = 0
+                if pd.notna(row['H값']):
+                    try:
+                        h_value_str = str(row['H값']).replace(',', '')
+                        h_value = float(h_value_str)
+                    except (ValueError, TypeError):
+                        h_value = 0
+                
                 self.monitoring_data.append({
                     'symbol': symbol,
                     'next_target': next_target,
                     'buy_levels': buy_levels,
                     'rank': int(row['순위']) if pd.notna(row['순위']) else 0,
                     'name': row['코인명'],
-                    'current_price': current_price
+                    'current_price': current_price,
+                    'h_value': h_value
                 })
             
             print(f"모니터링 데이터 로드 완료: {len(self.monitoring_data)}개 코인")
@@ -179,21 +189,26 @@ class CryptoRealtimeMonitor:
         except Exception as e:
             print(f"모니터링 데이터 로드 실패: {e}")
     
-    def get_current_price(self, symbol: str) -> Optional[float]:
-        """실시간 가격 조회 (Binance API)"""
+    def get_candle_low(self, symbol: str, interval: str = "30m") -> Optional[float]:
+        """30분봉 저가 조회 (Binance Kline API)"""
         try:
-            # Binance API 사용
-            url = "https://api.binance.com/api/v3/ticker/price"
-            params = {"symbol": f"{symbol}USDT"}
+            url = "https://api.binance.com/api/v3/klines"
+            params = {
+                "symbol": f"{symbol}USDT",
+                "interval": interval,
+                "limit": 1  # 최근 1개 봉
+            }
             
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
             
-            return float(data['price'])
+            if data and len(data) > 0:
+                return float(data[0][3])  # 저가 (low)
+            return None
             
         except Exception as e:
-            print(f"{symbol} 가격 조회 실패: {e}")
+            print(f"{symbol} 30분봉 저가 조회 실패: {e}")
             return None
     
     def calculate_divergence(self, current_price: float, target_price: float) -> float:
@@ -201,6 +216,69 @@ class CryptoRealtimeMonitor:
         if target_price == 0:
             return float('inf')
         return abs((current_price - target_price) / target_price) * 100
+    
+    def check_buy_execution(self, coin_data: Dict) -> Optional[Dict]:
+        """30분봉 저가로 매수 실행 감지"""
+        symbol = coin_data['symbol']
+        next_target = coin_data['next_target']
+        buy_levels = coin_data['buy_levels']
+        
+        # 다음 매수 목표가가 B1~B7인 경우만 체크
+        if not next_target.startswith('B'):
+            return None
+        
+        target_price = buy_levels.get(next_target)
+        if not target_price:
+            return None
+        
+        # 30분봉 저가 조회
+        candle_low = self.get_candle_low(symbol)
+        if not candle_low:
+            return None
+        
+        # 저가가 목표가에 도달했는지 확인
+        if candle_low <= target_price:
+            return {
+                'symbol': symbol,
+                'target': next_target,
+                'target_price': target_price,
+                'candle_low': candle_low,
+                'rank': coin_data['rank'],
+                'name': coin_data['name'],
+                'h_value': coin_data['h_value']
+            }
+        
+        return None
+    
+    def calculate_average_buy_and_sell_price(self, coin_data: Dict) -> Dict:
+        """평균 매수선과 매도가 계산"""
+        next_target = coin_data['next_target']  # 예: "B3"
+        buy_levels = coin_data['buy_levels']
+        
+        # 매수 단계 추출 (B3 → 3)
+        stage_num = int(next_target[1])
+        
+        # 1단계부터 현재 단계까지의 매수가들
+        buy_prices = []
+        for i in range(1, stage_num + 1):
+            level_key = f'B{i}'
+            if level_key in buy_levels and buy_levels[level_key]:
+                buy_prices.append(buy_levels[level_key])
+        
+        # 평균 매수선 계산
+        avg_buy_price = sum(buy_prices) / len(buy_prices)
+        
+        # 매도 기준 적용 (SELL_THRESHOLDS)
+        sell_thresholds = {1: 7.7, 2: 17.3, 3: 24.4, 4: 37.4, 5: 52.7, 6: 79.9, 7: 98.5}
+        sell_threshold = sell_thresholds[stage_num]
+        sell_price = avg_buy_price * (1 + sell_threshold / 100)
+        
+        return {
+            'avg_buy_price': avg_buy_price,
+            'sell_price': sell_price,
+            'sell_threshold': sell_threshold,
+            'stage_num': stage_num
+        }
     
     def get_allowed_targets(self, next_target: str) -> List[str]:
         """다음 매수 목표에 따른 허용 알람 목표 반환"""
@@ -247,7 +325,8 @@ class CryptoRealtimeMonitor:
                         'current_price': current_price,
                         'divergence': divergence,
                         'rank': coin_data['rank'],
-                        'name': coin_data['name']
+                        'name': coin_data['name'],
+                        'h_value': coin_data['h_value']
                     })
         
         return alerts
@@ -255,16 +334,17 @@ class CryptoRealtimeMonitor:
     def send_alert(self, alert: Dict):
         """텔레그램 알람 전송"""
         try:
-            # 알람 메시지 포맷팅
+            # 알람 메시지 포맷팅 (새로운 형식)
             message = (
-                f"🪙 <b>매수 목표 접근 알림</b>\n\n"
-                f"코인명: {alert['name']}\n"
-                f"심볼: {alert['symbol']}\n"
-                f"시총 순위: {alert['rank']}\n"
+                f"🪙 <b>매수 목표 접근 알림</b>\n"
+                f"────────────\n"
+                f"코인명: {alert['name']} ({alert['symbol']})\n"
+                f"시총 순위: {alert['rank']}\n\n"
                 f"현재가: ${alert['current_price']:,.4f}\n"
-                f"매수목표: {alert['target']}\n"
-                f"목표가격: ${alert['target_price']:,.4f}\n"
-                f"이격도: {alert['divergence']:.2f}%"
+                f"매수목표: <b>{alert['target']} - ${alert['target_price']:,.4f}</b>\n"
+                f"이격도: <b>{alert['divergence']:.2f}%</b>\n"
+                f"────────────\n"
+                f"<tg-spoiler>* 기준 고점: ${alert['h_value']:,.2f}</tg-spoiler>"
             )
             
             # 텔레그램 전송 (모든 수신자에게)
@@ -287,6 +367,57 @@ class CryptoRealtimeMonitor:
         except Exception as e:
             print(f"알람 전송 오류: {e}")
     
+    def send_buy_execution_alert(self, execution_data: Dict):
+        """매수 실행 알림 전송"""
+        try:
+            # 평균 매수선과 매도가 계산
+            price_data = self.calculate_average_buy_and_sell_price(execution_data)
+            
+            # 현재가 조회
+            current_price = self.get_current_price(execution_data['symbol'])
+            current_price_str = f"${current_price:,.4f}" if current_price else "조회실패"
+            
+            # 매수 실행 메시지 포맷팅 (새로운 형식)
+            message = (
+                f"⚡ <b>매수 실행 알림</b>\n"
+                f"────────────\n"
+                f"코인명: {execution_data['name']} ({execution_data['symbol']})\n"
+                f"시총 순위: {execution_data['rank']}\n\n"
+                f"매수 목표: {execution_data['target']} — ${execution_data['target_price']:,.2f}\n"
+                f"30분봉 저가: ${execution_data['candle_low']:,.2f}\n\n"
+                f"현재가: ${current_price:,.2f}\n"
+                f"평균매수가: ${price_data['avg_buy_price']:,.2f}\n"
+                f"예상 매도가: ${price_data['sell_price']:,.2f} (+{price_data['sell_threshold']:.1f}%)\n"
+                f"────────────\n"
+                f"<tg-spoiler>* 기준 고점: ${execution_data['h_value']:,.2f}</tg-spoiler>"
+            )
+            
+            # 텔레그램 전송 (모든 수신자에게)
+            success = send_telegram_message(message, recipients=["all"])
+            
+            if success:
+                # 매수 실행 이력 업데이트
+                today = datetime.now().strftime("%Y-%m-%d")
+                symbol = execution_data['symbol']
+                target = execution_data['target']
+                
+                if symbol not in self.alert_history:
+                    self.alert_history[symbol] = {}
+                if not isinstance(self.alert_history[symbol], dict):
+                    self.alert_history[symbol] = {}
+                
+                # 매수 실행 이력 키 (접근 알림과 구분)
+                execution_key = f"{target}_EXECUTED"
+                self.alert_history[symbol][execution_key] = today
+                self.save_alert_history()
+                
+                print(f"매수 실행 알림 전송 완료: {symbol} {target}")
+            else:
+                print(f"매수 실행 알림 전송 실패: {symbol} {target}")
+                
+        except Exception as e:
+            print(f"매수 실행 알림 전송 실패: {e}")
+    
     def run_monitoring_cycle(self):
         """30분 간격 모니터링 사이클"""
         if not self.monitoring_data:
@@ -303,12 +434,28 @@ class CryptoRealtimeMonitor:
                 if current_price is None:
                     continue
                 
-                # 알람 조건 확인
+                # 알람 조건 확인 (접근 알림)
                 alerts = self.check_alert_condition(coin_data, current_price)
                 
                 # 알람 전송
                 for alert in alerts:
                     self.send_alert(alert)
+                
+                # 매수 실행 감지 (30분봉 저가 기준)
+                execution_data = self.check_buy_execution(coin_data)
+                if execution_data:
+                    # 중복 실행 알림 방지
+                    today = datetime.now().strftime("%Y-%m-%d")
+                    symbol = execution_data['symbol']
+                    target = execution_data['target']
+                    execution_key = f"{target}_EXECUTED"
+                    
+                    if (symbol not in self.alert_history or 
+                        not isinstance(self.alert_history[symbol], dict) or
+                        execution_key not in self.alert_history[symbol] or
+                        self.alert_history[symbol][execution_key] != today):
+                        
+                        self.send_buy_execution_alert(execution_data)
                 
                 # API 제한 방지
                 time.sleep(0.1)
