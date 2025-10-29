@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, date
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import os
+import pandas as pd
 import requests
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
