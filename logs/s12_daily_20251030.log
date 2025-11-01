@@ -1,0 +1,14 @@
+======================================== 
+S12 Trading System - Daily Run (20:10) 
+Start Time: 2025-10-30 23:23:32.10 
+======================================== 
+[1/2] Daily Turnover Tracking... 
+Traceback (most recent call last):
+  File "C:\Coding\S12\Daily_Turnover_Tracker.py", line 18, in <module>
+    import requests
+  File "C:\Program Files (x86)\Python311\Lib\site-packages\requests\__init__.py", line 43, in <module>
+    import urllib3
+ModuleNotFoundError: No module named 'urllib3'
+ERROR: Daily Turnover Tracker failed! 
+ERROR: Process failed at 2025-10-30 23:23:32.45 
+======================================== 

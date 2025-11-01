@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Get-Content $env:USERPROFILE\\.config\\claude-code\\config.json\")",
+      "Bash(powershell -Command \"Get-Content \"\"$env:USERPROFILE\\.config\\claude-code\\config.json\"\"\")",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

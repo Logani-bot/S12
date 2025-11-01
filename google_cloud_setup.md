@@ -117,3 +117,6 @@ python upbit_alert_optimized.py
 
 
 
+
+
+
