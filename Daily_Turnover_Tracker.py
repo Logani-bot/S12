@@ -21,6 +21,15 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Border, Side
 
+# 거래일 체크 유틸리티 import
+try:
+    from trading_day_utils import is_trading_day, get_trading_day_info
+    TRADING_DAY_CHECK_AVAILABLE = True
+except ImportError:
+    TRADING_DAY_CHECK_AVAILABLE = False
+    logger_import = logging.getLogger(__name__)
+    logger_import.warning("trading_day_utils 모듈을 찾을 수 없습니다. 거래일 체크가 비활성화됩니다.")
+
 # ==================== 설정 ====================
 APPKEY_DEFAULT = "IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU"
 SECRET_DEFAULT = "eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs"
@@ -578,11 +587,29 @@ def main():
         action="store_true",
         help="상세 로그 출력"
     )
-    
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="거래일 체크 무시하고 강제 실행"
+    )
+
     args = parser.parse_args()
-    
+
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # 거래일 체크 (강제 실행 옵션이 없는 경우에만)
+    if TRADING_DAY_CHECK_AVAILABLE and not args.force:
+        trading_info = get_trading_day_info()
+        if not trading_info['is_trading_day']:
+            logger.info("=" * 60)
+            logger.info(f"📅 비거래일입니다 ({trading_info['reason']})")
+            logger.info("거래일이 아닌 날에는 데이터 수집을 건너뜁니다.")
+            logger.info("강제 실행하려면 --force 옵션을 사용하세요.")
+            logger.info("=" * 60)
+            return
+    elif args.force:
+        logger.info("🔧 강제 실행 모드: 거래일 체크를 무시합니다.")
     
     # API 키 설정
     appkey = args.appkey or os.getenv("KIWOOM_APPKEY") or APPKEY_DEFAULT
