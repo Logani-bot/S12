@@ -432,18 +432,18 @@ def check_buy_signal(low: float, buy_line: float) -> bool:
     return low <= buy_line
 
 
-def check_sell_retouch(high: float, close: float, sell_line: float, max_high: float) -> bool:
-    """매도 재터치 시그널 체크"""
-    # 과거에 매도선 이상 도달했었고, 현재 종가가 매도선 이하로 재터치
-    if max_high is None or high is None or close is None or sell_line is None:
+def check_sell_retouch(high: float, close: float, sell_line: float, max_high: float, avg_buy_price: float) -> bool:
+    """매도 재터치 시그널 체크 (매수가 기준)"""
+    # 과거에 매도선 이상 도달했었고, 현재가가 평균매수가 근처로 재터치
+    if max_high is None or high is None or close is None or sell_line is None or avg_buy_price is None:
         return False
-    
+
     # 과거 최고가가 매도선 이상이었고
     if max_high >= sell_line:
-        # 현재 고가가 매도선 근처 재터치 (±0.5% 허용)
-        if abs(high - sell_line) / sell_line < 0.005:
+        # 현재 종가가 평균매수가 근처 재터치 (±1% 허용)
+        if abs(close - avg_buy_price) / avg_buy_price < 0.01:
             return True
-    
+
     return False
 
 
@@ -615,16 +615,16 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         if high >= sell3:
             buy_status = BuyStatus.SOLD
             logger.info(f"  💰💰💰 +7% 도달! 전량 매도!")
-        
-        # +5% 재터치
-        elif check_sell_retouch(high, close, sell2, max_high_line):
+
+        # +5% 도달 후 평균매수가 재터치
+        elif check_sell_retouch(high, close, sell2, max_high_line, avg_price):
             buy_status = BuyStatus.SOLD
-            logger.info(f"  💰💰 +5% 재터치! 전량 매도!")
-        
-        # +3% 재터치
-        elif check_sell_retouch(high, close, sell1, max_high_line):
+            logger.info(f"  💰💰 +5% 도달 후 매수가 재터치! 전량 매도!")
+
+        # +3% 도달 후 평균매수가 재터치
+        elif check_sell_retouch(high, close, sell1, max_high_line, avg_price):
             buy_status = BuyStatus.SOLD
-            logger.info(f"  💰 +3% 재터치! 전량 매도!")
+            logger.info(f"  💰 +3% 도달 후 매수가 재터치! 전량 매도!")
     
     # 알람 상태 결정
     alert_status, alert_msg = determine_alert_status(
@@ -894,9 +894,9 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
         if max_high and sell3 and max_high >= sell3:
             row["종료사유"] = "+7% 도달 → 전량 매도"
         elif max_high and sell2 and max_high >= sell2:
-            row["종료사유"] = "+5% 재터치 → 전량 매도"
+            row["종료사유"] = "+5% 도달 후 매수가 재터치 → 전량 매도"
         elif max_high and sell1 and max_high >= sell1:
-            row["종료사유"] = "+3% 재터치 → 전량 매도"
+            row["종료사유"] = "+3% 도달 후 매수가 재터치 → 전량 매도"
         else:
             row["종료사유"] = "매도 완료"
         
