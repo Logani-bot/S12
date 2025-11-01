@@ -7,7 +7,17 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(dir:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git log:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\ndocs: Add CLAUDE.md for future Claude Code instances\n\n- Comprehensive system documentation for S12 Trading System\n- Architecture overview with data flow\n- Commands for daily operations, real-time monitoring, and testing\n- Technical details (tick price calculation, alert logic, Excel formatting)\n- Troubleshooting guide and known issues\n- Include .claude/ settings and recent logs\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(git mv:*)",
+      "Bash(git rm:*)",
+      "Bash(while read f)",
+      "Bash(do if [ ! -f \"test/$f\" ])",
+      "Bash(then echo \"$f\")",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
