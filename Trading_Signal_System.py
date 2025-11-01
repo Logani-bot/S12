@@ -848,24 +848,36 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
 
 def save_signals(df_summary: pd.DataFrame, df_history: pd.DataFrame, file_path: str):
     """시그널을 엑셀에 저장 (Summary + History)"""
-    
+
+    # ⭐ History 백업: History가 비어있지 않으면 백업 파일 생성
+    if not df_history.empty and Path(file_path).exists():
+        backup_path = file_path.replace(".xlsx", "_history_backup.xlsx")
+        try:
+            # 기존 파일에서 History만 백업
+            df_history.to_excel(backup_path, sheet_name="History", index=False)
+            logger.info(f"✓ History 백업 완료: {backup_path}")
+        except Exception as e:
+            logger.warning(f"⚠️ History 백업 실패: {e}")
+
     # ⭐ 매수량, 총투자금액, 총보유수량 열 제거
     cols_to_drop = ["1차매수량", "2차매수량", "3차매수량", "총투자금액", "총보유수량"]
     df_summary = df_summary.drop(columns=[c for c in cols_to_drop if c in df_summary.columns], errors='ignore')
     df_history = df_history.drop(columns=[c for c in cols_to_drop if c in df_history.columns], errors='ignore')
-    
+
     # 엑셀에 저장
     with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
         df_summary.to_excel(writer, sheet_name="Summary", index=False)
         df_history.to_excel(writer, sheet_name="History", index=False)
-    
+
     # 포맷팅 적용
     apply_signal_formatting(file_path, "Summary")
     apply_signal_formatting(file_path, "History")
-    
+
     logger.info(f"✓ Summary 저장 완료: {len(df_summary)}개 종목")
     if not df_history.empty:
         logger.info(f"✓ History 저장 완료: {len(df_history)}개 종목")
+    else:
+        logger.warning(f"⚠️ History가 비어있습니다!")
 
 
 def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -996,12 +1008,17 @@ def main():
         # 3. 기존 시그널 로드 (있으면)
         df_summary = pd.DataFrame()
         df_history = pd.DataFrame()
-        
+
         if Path(signal_file).exists():
             try:
                 df_summary = pd.read_excel(signal_file, sheet_name="Summary")
                 df_history = pd.read_excel(signal_file, sheet_name="History")
                 logger.info(f"✓ 기존 시그널 로드: Summary {len(df_summary)}개, History {len(df_history)}개")
+
+                # ⭐ History 보호: 빈 DataFrame인데 파일에 데이터가 있었다면 경고
+                if df_history.empty:
+                    logger.warning("⚠️ History 시트가 비어있습니다. 과거 데이터가 손실되었을 수 있습니다.")
+
             except Exception as e:
                 logger.warning(f"기존 시그널 로드 실패 (새로 생성): {e}")
         

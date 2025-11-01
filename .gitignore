@@ -37,6 +37,9 @@ Thumbs.db
 test_*.xlsx
 daily_test.xlsx
 
+# Backup files
+*_history_backup.xlsx
+
 # Log files
 *.log
 logs/*.log
