@@ -37,6 +37,11 @@ Thumbs.db
 test_*.xlsx
 daily_test.xlsx
 
+# Log files
+*.log
+logs/*.log
+realtime_monitor_*.log
+
 # Old files
 *_20*.xlsx
 *_20*.csv
