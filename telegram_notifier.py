@@ -107,6 +107,8 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
     
     # 상태별 그룹화
     ready_buy1 = []
+    ready_buy2 = []
+    ready_buy3 = []
     bought_stocks = []
     ready_sell = []
     
@@ -114,6 +116,10 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
         status = alert.get("알람상태", "")
         if "READY_BUY1" in status:
             ready_buy1.append(alert)
+        elif "READY_BUY2" in status:
+            ready_buy2.append(alert)
+        elif "READY_BUY3" in status:
+            ready_buy3.append(alert)
         elif "BOUGHT" in alert.get("매수상태", ""):
             bought_stocks.append(alert)
         elif "READY_SELL" in status:
@@ -129,12 +135,52 @@ def send_daily_report(alerts: List[dict], total_stocks: int, recipients: List[st
         for stock in ready_buy1:
             name = stock.get("종목명", "")
             close = stock.get("종가", 0)
-            buy1 = stock.get("1차매수선", 0)
+            buy1 = stock.get("1차매수선(익일)", 0)
             dist = stock.get("1차매수선이격도(%)", 0)
             
             message += f"  • {name}\n"
             message += f"    현재가: {int(close):,}원\n"
             message += f"    매수가: {int(round(buy1)):,}원\n"
+            message += f"    이격도: {dist:.1f}%\n\n"
+        
+        message += "\n"
+    
+    # 2차 매수 접근 중 (10% 이내) - 이격도 낮은 순으로 정렬
+    if ready_buy2:
+        message += f"🟠 <b>2차 매수 접근 중</b> ({len(ready_buy2)}개)\n"
+        
+        # 이격도 낮은 순으로 정렬
+        ready_buy2.sort(key=lambda x: x.get("2차매수선이격도(%)", 999))
+        
+        for stock in ready_buy2:
+            name = stock.get("종목명", "")
+            close = stock.get("종가", 0)
+            buy2 = stock.get("2차매수선(익일)", 0)
+            dist = stock.get("2차매수선이격도(%)", 0)
+            
+            message += f"  • {name}\n"
+            message += f"    현재가: {int(close):,}원\n"
+            message += f"    매수가: {int(round(buy2)):,}원\n"
+            message += f"    이격도: {dist:.1f}%\n\n"
+        
+        message += "\n"
+    
+    # 3차 매수 접근 중 (10% 이내) - 이격도 낮은 순으로 정렬
+    if ready_buy3:
+        message += f"🟤 <b>3차 매수 접근 중</b> ({len(ready_buy3)}개)\n"
+        
+        # 이격도 낮은 순으로 정렬
+        ready_buy3.sort(key=lambda x: x.get("3차매수선이격도(%)", 999))
+        
+        for stock in ready_buy3:
+            name = stock.get("종목명", "")
+            close = stock.get("종가", 0)
+            buy3 = stock.get("3차매수선(익일)", 0)
+            dist = stock.get("3차매수선이격도(%)", 0)
+            
+            message += f"  • {name}\n"
+            message += f"    현재가: {int(close):,}원\n"
+            message += f"    매수가: {int(round(buy3)):,}원\n"
             message += f"    이격도: {dist:.1f}%\n\n"
         
         message += "\n"

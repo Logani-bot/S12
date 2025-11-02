@@ -86,19 +86,19 @@ def get_tick_unit(price: float) -> int:
 
 def get_nearest_tick_price(price: float) -> float:
     """
-    가장 가까운 정규 호가 가격 계산 (항상 윗 호가)
+    가장 가까운 정규 호가 가격 계산 (항상 한 호가 위)
     
     Args:
         price: 기준 가격
     
     Returns:
-        가장 가까운 정규 호가 가격 (항상 윗 호가)
+        가장 가까운 정규 호가 가격 (항상 한 호가 위)
     """
     tick_unit = get_tick_unit(price)
     
-    # 현재 가격이 정확히 호가 단위에 맞는 경우
+    # 현재 가격이 정확히 호가 단위에 맞는 경우도 한 호가 위로 계산
     if price % tick_unit == 0:
-        return price
+        return price + tick_unit
     
     # 현재 가격이 호가 단위 사이에 있는 경우 항상 윗 호가로 설정
     lower_tick = (price // tick_unit) * tick_unit
@@ -350,19 +350,19 @@ def calculate_buy_line_1(S19_next: float) -> float:
 
 
 def calculate_buy_line_2(buy1: float) -> float:
-    """2차 매수선: 1차 매수선에서 10% 하락 후 한 호가 위"""
+    """2차 매수선: 1차 매수선에서 10% 하락 후 가장 가까운 윗 호가"""
     if buy1 is None:
         return None
     base_price = buy1 * (1 - BUY_LEVEL_GAP / 100)
-    return get_one_tick_up_price(base_price)
+    return get_nearest_tick_price(base_price)
 
 
 def calculate_buy_line_3(buy2: float) -> float:
-    """3차 매수선: 2차 매수선에서 10% 하락 후 한 호가 위"""
+    """3차 매수선: 2차 매수선에서 10% 하락 후 가장 가까운 윗 호가"""
     if buy2 is None:
         return None
     base_price = buy2 * (1 - BUY_LEVEL_GAP / 100)
-    return get_one_tick_up_price(base_price)
+    return get_nearest_tick_price(base_price)
 
 
 def calculate_sell_line_1(avg_buy_price: float) -> float:
@@ -480,34 +480,57 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
     elif days_old > 0:
         logger.info(f"  📅 데이터 날짜: {date_str} ({days_old}일 전)")
     
-    # 20일선 계산
-    ma20 = calculate_ma(df_chart, 20)
-    if ma20 is None:
+    # ==================== 당일(D일) 기준 계산 ====================
+    # 당일 20일선 계산
+    ma20_today = calculate_ma(df_chart, 20)
+    if ma20_today is None:
         logger.warning(f"  ⚠️ 20일선 계산 실패")
         return None
-    
-    # 다음날 기준 19일 종가 합계 계산
-    S20 = ma20 * 20  # 20일 종가 합계
-    Close_D_19 = df_chart.iloc[-20]["종가"]  # 20일 전 종가
-    S19_next = S20 - Close_D_19  # 다음날 기준 19일 종가 합계
-    
-    # 엔벨로프 지지선 (-20%) - 기존 로직 유지 (참고용)
-    envelope = calculate_envelope_support(ma20, -20.0)
-    
-    # 새로운 정확한 매수선 계산
-    buy1 = calculate_buy_line_1(S19_next)
-    buy2 = calculate_buy_line_2(buy1)
-    buy3 = calculate_buy_line_3(buy2)
-    
-    # 이격도 계산
-    dist_buy1 = calculate_distance_pct(close, buy1)
-    dist_buy2 = calculate_distance_pct(close, buy2)
-    dist_buy3 = calculate_distance_pct(close, buy3)
-    
-    logger.info(f"  [{date_str}] 종가: {close:,.0f}원, 20일선: {ma20:,.0f}원")
-    logger.info(f"  📊 S20: {S20:,.0f}, Close_D_19: {Close_D_19:,.0f}, S19_next: {S19_next:,.0f}")
-    logger.info(f"  🎯 정확한 매수선: 1차 {buy1:,.0f}, 2차 {buy2:,.0f}, 3차 {buy3:,.0f}")
-    logger.info(f"  📈 기존 엔벨로프: {envelope:,.0f}원 (참고용)")
+
+    # 당일 기준 19일 종가 합계 계산
+    S20_today = ma20_today * 20  # 당일 20일 종가 합계
+    Close_D_20 = df_chart.iloc[-20]["종가"]  # 20일 전 종가 (당일 기준)
+    S19_today = S20_today - Close_D_20  # 당일 기준 19일 종가 합계
+
+    # 당일 기준 매수선 계산 (체결 판단용)
+    buy1_today = calculate_buy_line_1(S19_today)
+    buy2_today = calculate_buy_line_2(buy1_today)
+    buy3_today = calculate_buy_line_3(buy2_today)
+
+    # ==================== 익일(D+1일) 기준 계산 ====================
+    # 익일 기준 19일 종가 합계 계산
+    # 익일 20일선 = (D-18 ~ D) 19일 + 익일종가
+    # 따라서 S19_next = S20_today - D-19일 종가
+    Close_D_19 = df_chart.iloc[-20]["종가"]  # D-19일 종가 (iloc[-20]이 20일 전 = D-19일)
+    S19_next = S20_today - Close_D_19  # 익일 기준: 19일 전 종가 제외
+
+    # 익일 기준 매수선 계산 (알람용)
+    buy1_next = calculate_buy_line_1(S19_next)
+    buy2_next = calculate_buy_line_2(buy1_next)
+    buy3_next = calculate_buy_line_3(buy2_next)
+
+    # 이격도 계산 (익일 기준)
+    dist_buy1 = calculate_distance_pct(close, buy1_next)
+    dist_buy2 = calculate_distance_pct(close, buy2_next)
+    dist_buy3 = calculate_distance_pct(close, buy3_next)
+
+    # 엔벨로프 지지선 (-20%) - 당일/익일 기준 각각 계산
+    envelope_today = calculate_envelope_support(ma20_today, -20.0)
+
+    # 익일 기준 20일선 계산 (D+1일에 D-19일 데이터가 빠지고 익일 종가가 추가됨)
+    # 익일 S20 = S19_next + 익일종가
+    # 익일 종가를 모르므로 당일 종가로 근사
+    S20_next_approx = S19_next + close
+    ma20_next_approx = S20_next_approx / 20
+    envelope_next = calculate_envelope_support(ma20_next_approx, -20.0)
+
+    logger.info(f"  [{date_str}] 종가: {close:,.0f}원, 20일선: {ma20_today:,.0f}원")
+    logger.info(f"  📊 [당일 기준] S19_today: {S19_today:,.0f}")
+    logger.info(f"  🎯 [당일 기준 매수선] 1차: {buy1_today:,.0f}, 2차: {buy2_today:,.0f}, 3차: {buy3_today:,.0f}")
+    logger.info(f"  📊 [당일 기준 엔벨로프] -20%: {envelope_today:,.0f}원")
+    logger.info(f"  📊 [익일 기준] S19_next: {S19_next:,.0f}")
+    logger.info(f"  🎯 [익일 기준 매수선] 1차: {buy1_next:,.0f}, 2차: {buy2_next:,.0f}, 3차: {buy3_next:,.0f}")
+    logger.info(f"  📊 [익일 기준 엔벨로프] -20%: {envelope_next:,.0f}원 (근사값)")
     
     # 기존 데이터 확인
     existing = df_summary[df_summary["티커"] == ticker] if not df_summary.empty and "티커" in df_summary.columns else pd.DataFrame()
@@ -546,36 +569,36 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         buy3_qty = row.get("3차매수량")
         max_high_line = row.get("최고도달선")
     
-    # 매수 시그널 체크
-    if buy_status == BuyStatus.NONE and check_buy_signal(low, buy1):
+    # ==================== 매수 시그널 체크 (⭐ 당일 기준) ====================
+    if buy_status == BuyStatus.NONE and check_buy_signal(low, buy1_today):
         buy_status = BuyStatus.BOUGHT_1
         buy1_date = date_str
-        buy1_price = buy1
+        buy1_price = buy1_today  # ⭐ 당일 기준 매수가
         buy1_qty = 100  # 예시: 100주
         total_qty = 100
-        total_amount = buy1 * 100
-        avg_price = buy1
-        logger.info(f"  🔴 1차 매수 체결! {buy1:,.0f}원 x 100주")
-    
-    elif buy_status == BuyStatus.BOUGHT_1 and check_buy_signal(low, buy2):
+        total_amount = buy1_today * 100
+        avg_price = buy1_today
+        logger.info(f"  🔴 1차 매수 체결! {buy1_today:,.0f}원 x 100주 (당일 기준)")
+
+    elif buy_status == BuyStatus.BOUGHT_1 and check_buy_signal(low, buy2_today):
         buy_status = BuyStatus.BOUGHT_2
         buy2_date = date_str
-        buy2_price = buy2
+        buy2_price = buy2_today  # ⭐ 당일 기준 매수가
         buy2_qty = 100
         total_qty += 100
-        total_amount += buy2 * 100
+        total_amount += buy2_today * 100
         avg_price = total_amount / total_qty
-        logger.info(f"  🔴🔴 2차 매수 체결! {buy2:,.0f}원 x 100주")
-    
-    elif buy_status == BuyStatus.BOUGHT_2 and check_buy_signal(low, buy3):
+        logger.info(f"  🔴🔴 2차 매수 체결! {buy2_today:,.0f}원 x 100주 (당일 기준)")
+
+    elif buy_status == BuyStatus.BOUGHT_2 and check_buy_signal(low, buy3_today):
         buy_status = BuyStatus.BOUGHT_3
         buy3_date = date_str
-        buy3_price = buy3
+        buy3_price = buy3_today  # ⭐ 당일 기준 매수가
         buy3_qty = 100
         total_qty += 100
-        total_amount += buy3 * 100
+        total_amount += buy3_today * 100
         avg_price = total_amount / total_qty
-        logger.info(f"  🔴🔴🔴 3차 매수 체결! {buy3:,.0f}원 x 100주")
+        logger.info(f"  🔴🔴🔴 3차 매수 체결! {buy3_today:,.0f}원 x 100주 (당일 기준)")
     
     # 매도선 계산 (매수 후에만)
     sell1 = None
@@ -626,14 +649,14 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
             buy_status = BuyStatus.SOLD
             logger.info(f"  💰 +3% 도달 후 매수가 재터치! 전량 매도!")
     
-    # 알람 상태 결정
+    # 알람 상태 결정 (⭐ 익일 기준 매수선 사용)
     alert_status, alert_msg = determine_alert_status(
-        buy_status, close, buy1, buy2, buy3, sell1, sell2, sell3,
+        buy_status, close, buy1_next, buy2_next, buy3_next, sell1, sell2, sell3,
         dist_buy1, dist_buy2, dist_buy3, dist_sell1, dist_sell2, dist_sell3,
         alert_threshold
     )
-    
-    # 결과 반환
+
+    # 결과 반환 (⭐ 당일/익일 기준 모두 Excel에 기록)
     result = {
         "티커": ticker,
         "종목명": name,
@@ -643,22 +666,24 @@ def analyze_stock(token: str, ticker: str, name: str, df_summary: pd.DataFrame, 
         "종가": close,
         "저가": low,
         "고가": high,
-        "20일선": ma20,
-        "-20%엔벨로프": envelope,
-        "1차매수선": buy1,
+        "20일선(당일)": ma20_today,
+        "20일선(익일)": ma20_next_approx,
+        "-20%엔벨로프(당일)": envelope_today,
+        "-20%엔벨로프(익일)": envelope_next,
+        "1차매수선(익일)": buy1_next,  # ⭐ 익일 기준 (알람용)
         "1차매수선이격도(%)": dist_buy1,
         "1차매수일": buy1_date,
-        "1차매수가": buy1_price,
+        "1차매수가(당일)": buy1_price,  # ⭐ 당일 실제 체결가
         "1차매수량": buy1_qty,
-        "2차매수선": buy2,
+        "2차매수선(익일)": buy2_next,  # ⭐ 익일 기준 (알람용)
         "2차매수선이격도(%)": dist_buy2,
         "2차매수일": buy2_date,
-        "2차매수가": buy2_price,
+        "2차매수가(당일)": buy2_price,  # ⭐ 당일 실제 체결가
         "2차매수량": buy2_qty,
-        "3차매수선": buy3,
+        "3차매수선(익일)": buy3_next,  # ⭐ 익일 기준 (알람용)
         "3차매수선이격도(%)": dist_buy3,
         "3차매수일": buy3_date,
-        "3차매수가": buy3_price,
+        "3차매수가(당일)": buy3_price,  # ⭐ 당일 실제 체결가
         "3차매수량": buy3_qty,
         "평균매수가": avg_price,
         "총투자금액": total_amount,
@@ -684,6 +709,9 @@ def determine_alert_status(buy_status: str, close: float,
                            threshold: float) -> Tuple[str, str]:
     """알람 상태 및 메시지 결정"""
     
+    # 매도선 접근 기준 (3%)
+    SELL_ALERT_THRESHOLD = 3.0
+    
     if buy_status == BuyStatus.SOLD:
         return AlertStatus.COMPLETED, "매도 완료"
     
@@ -696,8 +724,8 @@ def determine_alert_status(buy_status: str, close: float,
     
     # 1차 매수 후
     elif buy_status == BuyStatus.BOUGHT_1:
-        # 매도선 체크
-        if dist_sell1 is not None and dist_sell1 <= threshold:
+        # 매도선 체크 (3% 기준)
+        if dist_sell1 is not None and abs(dist_sell1) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL1, f"+3% 매도선까지 {abs(dist_sell1):.1f}%"
         # 2차 매수선 체크
         elif dist_buy2 is not None and 0 < dist_buy2 <= threshold:
@@ -707,10 +735,10 @@ def determine_alert_status(buy_status: str, close: float,
     
     # 2차 매수 후
     elif buy_status == BuyStatus.BOUGHT_2:
-        # 매도선 체크
-        if dist_sell2 is not None and dist_sell2 <= threshold:
+        # 매도선 체크 (3% 기준)
+        if dist_sell2 is not None and abs(dist_sell2) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL2, f"+5% 매도선까지 {abs(dist_sell2):.1f}%"
-        elif dist_sell1 is not None and dist_sell1 <= threshold:
+        elif dist_sell1 is not None and abs(dist_sell1) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL1, f"+3% 매도선까지 {abs(dist_sell1):.1f}%"
         # 3차 매수선 체크
         elif dist_buy3 is not None and 0 < dist_buy3 <= threshold:
@@ -720,12 +748,12 @@ def determine_alert_status(buy_status: str, close: float,
     
     # 3차 매수 후
     elif buy_status == BuyStatus.BOUGHT_3:
-        # 매도선 체크
-        if dist_sell3 is not None and dist_sell3 <= threshold:
+        # 매도선 체크 (3% 기준)
+        if dist_sell3 is not None and abs(dist_sell3) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL3, f"+7% 매도선까지 {abs(dist_sell3):.1f}%"
-        elif dist_sell2 is not None and dist_sell2 <= threshold:
+        elif dist_sell2 is not None and abs(dist_sell2) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL2, f"+5% 매도선까지 {abs(dist_sell2):.1f}%"
-        elif dist_sell1 is not None and dist_sell1 <= threshold:
+        elif dist_sell1 is not None and abs(dist_sell1) <= SELL_ALERT_THRESHOLD:
             return AlertStatus.READY_SELL1, f"+3% 매도선까지 {abs(dist_sell1):.1f}%"
         else:
             return AlertStatus.WAITING, f"대기 중"
@@ -760,9 +788,9 @@ def apply_signal_formatting(file_path: str, sheet_name: str):
         col_indices[header] = idx
     
     # 금액 관련 열
-    price_cols = ["종가", "저가", "고가", "20일선", "-20%엔벨로프", 
-                  "1차매수선", "1차매수가", "2차매수선", "2차매수가", 
-                  "3차매수선", "3차매수가", "평균매수가", 
+    price_cols = ["종가", "저가", "고가", "20일선(당일)", "20일선(익일)", "-20%엔벨로프(당일)", "-20%엔벨로프(익일)", 
+                  "1차매수선(익일)", "1차매수가(당일)", "2차매수선(익일)", "2차매수가(당일)", 
+                  "3차매수선(익일)", "3차매수가(당일)", "평균매수가", 
                   "1차매도선(+3%)", "2차매도선(+5%)", "3차매도선(+7%)", "최고도달선"]
     
     # 이격도 열 (%)
