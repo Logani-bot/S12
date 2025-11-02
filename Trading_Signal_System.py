@@ -986,7 +986,7 @@ def main():
     parser.add_argument("--secret", required=True, help="Kiwoom API Secret Key")
     parser.add_argument("--universe", default=DEFAULT_UNIVERSE_FILE, help="유니버스 파일 경로")
     parser.add_argument("--signal", default=DEFAULT_SIGNAL_FILE, help="시그널 파일 경로")
-    parser.add_argument("--alert-threshold", type=float, default=DEFAULT_ALERT_THRESHOLD, help="알람 임계값 (%)")
+    parser.add_argument("--alert-threshold", type=float, default=DEFAULT_ALERT_THRESHOLD, help="알람 임계값 (%%)")
     parser.add_argument("--force", action="store_true", help="거래일 체크 무시하고 강제 실행")
     
     args = parser.parse_args()
