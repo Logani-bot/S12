@@ -10,6 +10,11 @@ venv/
 dist/
 build/
 
+# Environment
+.env
+.env.local
+.venv
+
 # IDE
 .vscode/
 .idea/
@@ -28,8 +33,6 @@ Thumbs.db
 # API Keys (보안)
 *secret*
 *key*.txt
-.env
-.env.local
 
 # Data files (선택적으로 제외)
 *.csv
@@ -64,3 +67,5 @@ test_count.xlsx
 test_scenarios.md
 test_unique.xlsx
 
+# Config files with sensitive data (if needed)
+# config.json

@@ -331,6 +331,52 @@ def send_error_alert(error_message: str, script_name: str = None, recipients: Li
     send_telegram_message(message, recipients)
 
 
+# upbit1515 호환성을 위한 TelegramNotifier 클래스
+class TelegramNotifier:
+    """텔레그램 알림 시스템 (upbit1515 호환)"""
+    
+    def __init__(self, bot_token: str = None):
+        """텔레그램 알림 초기화"""
+        self.bot_token = bot_token or TELEGRAM_TOKEN
+        if self.bot_token:
+            self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
+        else:
+            self.base_url = None
+        self.logger = logging.getLogger(__name__)
+    
+    def send_message(self, chat_id: str, message: str) -> bool:
+        """텔레그램 메시지 전송"""
+        if not self.bot_token:
+            self.logger.error("텔레그램 토큰이 설정되지 않았습니다.")
+            return False
+        
+        try:
+            url = f"{self.base_url}/sendMessage"
+            data = {
+                'chat_id': chat_id,
+                'text': message,
+                'parse_mode': 'HTML'
+            }
+            
+            response = requests.post(url, data=data, timeout=10)
+            response.raise_for_status()
+            
+            self.logger.info("텔레그램 메시지 전송 성공")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"텔레그램 메시지 전송 실패: {e}")
+            return False
+        except Exception as e:
+            self.logger.error(f"텔레그램 메시지 전송 중 오류: {e}")
+            return False
+    
+    def test_connection(self, chat_id: str) -> bool:
+        """텔레그램 연결 테스트"""
+        test_message = "🤖 업비트 모니터링 봇 연결 테스트\n\n✅ 정상적으로 연결되었습니다!"
+        return self.send_message(chat_id, test_message)
+
+
 # 테스트용
 if __name__ == "__main__":
     # 간단한 테스트 메시지
@@ -339,4 +385,3 @@ if __name__ == "__main__":
     # 본인에게만 테스트
     print("본인에게 테스트 메시지 전송 중...")
     send_telegram_message(test_msg, recipients=["me"])
-
