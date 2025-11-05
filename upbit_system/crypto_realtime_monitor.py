@@ -174,11 +174,32 @@ class CryptoRealtimeMonitor:
                     except (ValueError, TypeError):
                         h_value = 0
                 
+                # 순위 처리 (NaN 안전 처리)
+                rank = 0
+                if '순위' in row and pd.notna(row['순위']):
+                    try:
+                        rank_value = row['순위']
+                        # NaN 체크
+                        if pd.isna(rank_value):
+                            rank = 0
+                        else:
+                            # 문자열이면 숫자로 변환 시도
+                            if isinstance(rank_value, str):
+                                rank_value = rank_value.replace(',', '').strip()
+                            # float로 변환 후 정수로 변환 (NaN 체크)
+                            rank_float = float(rank_value)
+                            if pd.isna(rank_float) or pd.isinf(rank_float):
+                                rank = 0
+                            else:
+                                rank = int(rank_float)
+                    except (ValueError, TypeError, OverflowError):
+                        rank = 0
+                
                 self.monitoring_data.append({
                     'symbol': symbol,
                     'next_target': next_target,
                     'buy_levels': buy_levels,
-                    'rank': int(row['순위']) if pd.notna(row['순위']) else 0,
+                    'rank': rank,
                     'name': row['코인명'],
                     'current_price': current_price,
                     'h_value': h_value
