@@ -336,16 +336,35 @@ def apply_formatting(path: str, sheet_name: str, update_date: str = None):
         ws = wb[sheet_name]
         
         # G열 이후 (Unnamed 등) 모두 삭제
+        # Unnamed: n 컬럼은 pandas가 Excel을 읽을 때 인덱스나 빈 컬럼이 자동으로 생성되는 컬럼입니다.
+        # 이는 불필요한 컬럼이므로 제거합니다.
         if ws.max_column > 6:
             ws.delete_cols(7, ws.max_column - 6)
         
-        # 열 너비 수동 지정
-        ws.column_dimensions['A'].width = 12  # 첫주도주
-        ws.column_dimensions['B'].width = 12  # 최근주도주
-        ws.column_dimensions['C'].width = 8   # 티커
-        ws.column_dimensions['D'].width = 16  # 종목명
-        ws.column_dimensions['E'].width = 14  # 거래대금(억)
-        ws.column_dimensions['F'].width = 10  # 누적횟수
+        # 열 너비 자동 조절 (컬럼 내용에 따라)
+        from openpyxl.utils import get_column_letter
+        
+        # 각 컬럼의 최대 길이를 계산하여 너비 자동 설정
+        for col_idx in range(1, 7):  # A~F열
+            col_letter = get_column_letter(col_idx)
+            max_length = 0
+            
+            # 헤더 길이 확인
+            header_cell = ws.cell(row=1, column=col_idx)
+            if header_cell.value:
+                max_length = len(str(header_cell.value))
+            
+            # 데이터 길이 확인
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=col_idx, max_col=col_idx):
+                for cell in row:
+                    if cell.value is not None:
+                        cell_length = len(str(cell.value))
+                        if cell_length > max_length:
+                            max_length = cell_length
+            
+            # 너비 설정 (최소값과 여유 공간 추가)
+            adjusted_width = min(max(max_length + 2, 8), 50)  # 최소 8, 최대 50
+            ws.column_dimensions[col_letter].width = adjusted_width
         
         # 테두리
         thin_border = Border(
@@ -361,8 +380,10 @@ def apply_formatting(path: str, sheet_name: str, update_date: str = None):
                 if cell.value not in (None, ""):
                     cell.border = thin_border
                     
-                    # A,B열(날짜): 중앙정렬
+                    # A,B열(날짜): 날짜 포맷 + 중앙정렬 (시간 제거, 날짜만 표시)
                     if col_idx in [1, 2]:
+                        # 날짜 포맷 설정 (yyyy-mm-dd 형식, 시간 없음)
+                        cell.number_format = 'yyyy-mm-dd'
                         cell.alignment = Alignment(horizontal="center", vertical="center")
                     
                     # C열(티커): 텍스트 포맷 + 중앙정렬 (⭐ 앞의 0 보존)
@@ -393,7 +414,8 @@ def apply_formatting(path: str, sheet_name: str, update_date: str = None):
             ws["H1"] = f"최종 업데이트: {update_date}"
             ws["H1"].font = Font(bold=True, size=10)
             ws["H1"].alignment = Alignment(horizontal="left", vertical="center")
-            ws["H1"].border = Border()  # 테두리 없음
+            # 테두리 완전히 제거 (None으로 설정)
+            ws["H1"].border = None
         
         wb.save(path)
     except Exception as e:

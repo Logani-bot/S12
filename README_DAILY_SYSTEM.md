@@ -131,3 +131,6 @@ schtasks /create /tn "S12_Daily" /tr "C:\Coding\S12\run_trading_signal.bat" /sc 
 
 
 
+
+
+

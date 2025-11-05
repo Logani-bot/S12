@@ -1,0 +1,39 @@
+{
+  "text": "✅ [S2] 1차 매수 체결! - 삼성전자 (005930)",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "✅ [S2] 1차 매수 체결!",
+        "emoji": true
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "🕐 14:30:15"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*종목명     :* 삼성전자 (005930)\n*현재가     :* 75,300원\n*저가       :* 75,300원\n*매수선     :* 75,500원\n*이격도     :* -0.26%"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*매도가 정보:*\n*3% 매도가 :* 77,665원\n*5% 매도가 :* 79,445원\n*7% 매도가 :* 81,225원"
+      }
+    },
+    {
+      "type": "divider"
+    }
+  ]
+}

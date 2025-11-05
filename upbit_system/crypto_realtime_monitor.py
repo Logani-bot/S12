@@ -188,7 +188,9 @@ class CryptoRealtimeMonitor:
                                 rank_value = rank_value.replace(',', '').strip()
                             # float로 변환 후 정수로 변환 (NaN 체크)
                             rank_float = float(rank_value)
-                            if pd.isna(rank_float) or pd.isinf(rank_float):
+                            # math.isnan()과 pd.isna() 모두 체크 (일반 Python NaN과 pandas NaN 모두 처리)
+                            import math
+                            if math.isnan(rank_float) or pd.isna(rank_float) or pd.isinf(rank_float):
                                 rank = 0
                             else:
                                 rank = int(rank_float)

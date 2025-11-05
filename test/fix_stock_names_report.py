@@ -126,17 +126,18 @@ def generate_fixed_stock_names_report():
         # 텔레그램 리포트 전송
         print(f"\n[텔레그램 리포트 전송 중...]")
         
-        # 리포트 메시지 생성
+        # 리포트 메시지 생성 (S12와 동일하게 항상 리포트 전송)
         report_message = f"""📊 **일일 트레이딩 리포트 S1 (시총 기반)**
 📅 {report_date}
 
 **📈 분석 결과**
 • 총 분석 종목: {total_stocks:,}개 (중복 제거 후)
-• 매수 신호: {buy_count:,}개
-
-**🔍 주요 매수 신호 종목**"""
+• 매수 신호: {buy_count:,}개"""
 
         if buy_count > 0:
+            report_message += f"""
+
+**🔍 주요 매수 신호 종목**"""
             # 상위 5개 매수 신호만 포함
             top_5_signals = buy_signals.nsmallest(5, df_unique.columns[11])
             
@@ -152,6 +153,10 @@ def generate_fixed_stock_names_report():
   현재가: {current_price:,}원
   매수라인: {buy_line:,}원
   거리: {distance*100:.2f}%"""
+        else:
+            report_message += f"""
+
+🔕 매수 신호 대상 없음"""
         
         report_message += f"""
 

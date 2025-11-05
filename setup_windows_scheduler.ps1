@@ -45,19 +45,13 @@ $settings1 = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGo
 Register-ScheduledTask -TaskName "S2_Daily_Trading_Signal" -Action $action1 -Trigger $trigger1 -Settings $settings1 -Description "S12 매일 거래대금 + 시그널 분석 (20:10)" -Force | Out-Null
 Write-Host "✓ 작업 1 생성 완료: S2_Daily_Trading_Signal (매일 20:10)" -ForegroundColor Green
 
-# 작업 2: Real-Time Monitor (평일 08:00) - 표시 모드
-Write-Host "`n작업 2 생성 중... (표시 모드)" -ForegroundColor Green
+# 작업 2: Real-Time Monitor (평일 08:00) - 백그라운드 실행
+Write-Host "`n작업 2 생성 중... (백그라운드)" -ForegroundColor Green
 $action2 = New-ScheduledTaskAction -Execute $batFile2
 $trigger2 = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "08:00"
 $settings2 = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-$task2 = Register-ScheduledTask -TaskName "S2_Realtime_Monitor" -Action $action2 -Trigger $trigger2 -Settings $settings2 -Description "S12 실시간 주식 모니터링 (평일 08:00)" -Force
-
-# 표시 모드로 설정
-$task2.Principal.DisplayName = "실시간 모니터"
-$task2.Settings.Hidden = $false
-$task2 | Set-ScheduledTask
-
-Write-Host "✓ 작업 2 생성 완료: S2_Realtime_Monitor (평일 08:00, 표시)" -ForegroundColor Green
+Register-ScheduledTask -TaskName "S2_Realtime_Monitor" -Action $action2 -Trigger $trigger2 -Settings $settings2 -Description "S12 실시간 주식 모니터링 (평일 08:00)" -Force | Out-Null
+Write-Host "✓ 작업 2 생성 완료: S2_Realtime_Monitor (평일 08:00, 백그라운드)" -ForegroundColor Green
 
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "✅ 작업 스케줄러 설정 완료!" -ForegroundColor Cyan
@@ -65,15 +59,16 @@ Write-Host "========================================`n" -ForegroundColor Cyan
 
 Write-Host "생성된 작업:" -ForegroundColor Yellow
 Write-Host "  1. S2_Daily_Trading_Signal - 매일 20:10 실행 (백그라운드)" -ForegroundColor White
-Write-Host "  2. S2_Realtime_Monitor - 평일 08:00 실행 (표시)" -ForegroundColor White
+Write-Host "  2. S2_Realtime_Monitor - 평일 08:00 실행 (백그라운드)" -ForegroundColor White
 
-Write-Host "`n표시 모드 특징:" -ForegroundColor Yellow
-Write-Host "  - 실시간 모니터링은 화면에 표시됩니다" -ForegroundColor White
-Write-Host "  - 일일 리포트는 백그라운드에서 실행됩니다" -ForegroundColor White
+Write-Host "`n백그라운드 실행 특징:" -ForegroundColor Yellow
+Write-Host "  - 모든 작업이 백그라운드에서 실행됩니다" -ForegroundColor White
+Write-Host "  - 로그는 파일로 저장됩니다: logs/ 폴더" -ForegroundColor White
+Write-Host "  - 터미널 창이 표시되지 않습니다" -ForegroundColor White
 
-Write-Host "`n테스트 방법:" -ForegroundColor Yellow
-Write-Host "  1. 작업 스케줄러 열기: Win+R → taskschd.msc" -ForegroundColor White
-Write-Host "  2. 작업 목록에서 S2_Realtime_Monitor 우클릭 → '실행'" -ForegroundColor White
-Write-Host "  3. 새 창이 열리며 로그가 표시됩니다" -ForegroundColor White
+Write-Host "`n로그 확인 방법:" -ForegroundColor Yellow
+Write-Host "  1. 로그 파일 위치: logs/s12_daily_YYYYMMDD.log" -ForegroundColor White
+Write-Host "  2. 실시간 모니터 로그: logs/realtime_monitor_YYYYMMDD.log" -ForegroundColor White
+Write-Host "  3. 작업 스케줄러에서 실행 결과 확인 가능" -ForegroundColor White
 Write-Host "`n" -ForegroundColor White
 

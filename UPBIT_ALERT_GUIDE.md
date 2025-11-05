@@ -173,3 +173,6 @@ gcloud functions logs read upbit-alert-monitor --region=asia-northeast3 --limit=
 
 
 
+
+
+

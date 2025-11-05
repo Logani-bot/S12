@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(\"C:\\Program Files (x86)\\Python311\\python.exe\" Trading_Signal_System.py --appkey IweTdkYa8JWDUOa8NohVSVeOiJ1THDGd_2x050A8XcU --secret eazu-jPNJpAsIVkaUTh3_88gUvXrCMJCwGF2AYRtBJs --alert-threshold 10.0 --force)",
-      "Bash(\"C:\\Program Files (x86)\\Python311\\python.exe\" test_danawa_check.py)"
+      "Bash(\"C:\\Program Files (x86)\\Python311\\python.exe\" \"C:\\Coding\\S12\\monitor_dashboard.py\")"
     ],
     "deny": [],
     "ask": []

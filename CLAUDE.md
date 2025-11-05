@@ -56,6 +56,9 @@ python Real_Time_Monitor.py --appkey [KEY] --secret [SECRET]
 run_real_time_monitor.bat
 # Or:
 start_realtime_monitor.bat
+
+# Monitor all running programs (NEW)
+run_dashboard.bat
 ```
 
 ### Upbit Crypto Alert System
@@ -90,6 +93,7 @@ python test_cloud_function.py
 - **Daily_Turnover_Tracker.py**: Fetches daily turnover rankings from Kiwoom API, filters stocks with 5000억+ turnover, excludes ETF/ETN, accumulates results in `turnover_universe.xlsx`
 - **Trading_Signal_System.py**: Analyzes stocks from universe file, calculates 20-day MA envelopes, generates 3-level buy/sell signals, sends daily Telegram report at 20:10
 - **Real_Time_Monitor.py**: Monitors Summary tab stocks during trading hours (08:00-20:00), sends proximity alerts (5% threshold), one alert per status per day to prevent spam
+- **monitor_dashboard.py**: Interactive dashboard for monitoring and controlling all real-time programs, shows process status, log activity, supports one-click start/stop
 - **telegram_notifier.py**: Telegram notification module, supports 4 recipients (me, yoonjoo, minjeong, jumeoni), HTML/Markdown formatting
 - **trading_day_utils.py**: Trading day utilities using `holidays` library, checks weekends and Korean public holidays, provides next trading day calculation
 - **upbit_alert_optimized.py**: Monitors Upbit crypto market, alerts when 15+ coins drop 15%+, runs every 30 minutes, Google Cloud Functions compatible
@@ -100,6 +104,7 @@ python test_cloud_function.py
 - **UPDATE_EXCEL_NOW.bat**: Manual Excel update without scheduler
 - **run_trading_signal.bat**: Called by Windows Task Scheduler at 20:10 daily
 - **run_real_time_monitor.bat** / **start_realtime_monitor.bat**: Real-time monitoring launcher
+- **run_dashboard.bat**: Launches monitoring dashboard for all real-time programs
 
 ### Data Files (output/)
 
@@ -300,10 +305,17 @@ The system uses Excel files as the primary data store (no database). This design
 - Check `trading_day_utils.py` for holiday detection logic
 - Run `python trading_day_utils.py` to see current status
 
+**Real-time programs not running:**
+- Use `run_dashboard.bat` to check all program statuses
+- Dashboard shows process status, PID, and log activity
+- One-click start/stop for individual or all programs
+- See [MONITOR_DASHBOARD_GUIDE.md](MONITOR_DASHBOARD_GUIDE.md) for details
+
 ## Related Documentation
 
 - [S12_SYSTEM_GUIDE.md](S12_SYSTEM_GUIDE.md): Comprehensive system guide with detailed logic explanations
 - [README_DAILY_SYSTEM.md](README_DAILY_SYSTEM.md): Quick start guide for daily operations
 - [TEXTBOOK_SYSTEM.md](TEXTBOOK_SYSTEM.md): FAQ and common operations reference
+- [MONITOR_DASHBOARD_GUIDE.md](MONITOR_DASHBOARD_GUIDE.md): Real-time program monitoring dashboard guide
 - [UPBIT_ALERT_GUIDE.md](UPBIT_ALERT_GUIDE.md): Cryptocurrency alert system setup
 - [google_cloud_setup.md](google_cloud_setup.md): Google Cloud deployment instructions
