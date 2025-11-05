@@ -31,6 +31,15 @@ except ImportError:
     logger_telegram = logging.getLogger(__name__)
     logger_telegram.warning("telegram_notifier 모듈을 찾을 수 없습니다. 텔레그램 알람이 비활성화됩니다.")
 
+# 슬랙 알람
+try:
+    from slack_notifier import send_slack_daily_report
+    SLACK_AVAILABLE = True
+except ImportError:
+    SLACK_AVAILABLE = False
+    logger_slack = logging.getLogger(__name__)
+    logger_slack.warning("slack_notifier 모듈을 찾을 수 없습니다. 슬랙 알람이 비활성화됩니다.")
+
 # ==================== 설정 ====================
 logging.basicConfig(
     level=logging.INFO,
@@ -925,29 +934,55 @@ def move_to_history(df_summary: pd.DataFrame, df_history: pd.DataFrame) -> Tuple
         # 종료일 추가
         row["종료일"] = now
         
-        # 종료사유 판단 (최고도달선 기준)
+        # 종료사유 판단 및 매도가 결정 (최고도달선 기준)
         max_high = row.get("최고도달선")
         sell3 = row.get("3차매도선(+7%)")
         sell2 = row.get("2차매도선(+5%)")
         sell1 = row.get("1차매도선(+3%)")
         
+        # 매도가 결정 (종료사유에 따라 해당 매도선 가격 사용)
+        sell_price = None
         if max_high and sell3 and max_high >= sell3:
             row["종료사유"] = "+7% 도달 → 전량 매도"
+            sell_price = sell3  # 3차 매도선 가격
         elif max_high and sell2 and max_high >= sell2:
             row["종료사유"] = "+5% 도달 후 매수가 재터치 → 전량 매도"
+            sell_price = sell2  # 2차 매도선 가격
         elif max_high and sell1 and max_high >= sell1:
             row["종료사유"] = "+3% 도달 후 매수가 재터치 → 전량 매도"
+            sell_price = sell1  # 1차 매도선 가격
         else:
             row["종료사유"] = "매도 완료"
+            # 종료사유를 알 수 없는 경우 종가 사용 (하위 호환성)
+            sell_price = row.get("종가")
         
-        # 실현수익률 계산
+        # 실현수익률 계산 (매도가 사용)
         avg_price = row.get("평균매수가")
-        close = row.get("종가")
-        if avg_price and close:
-            profit_pct = ((close - avg_price) / avg_price) * 100
-            row["실현수익률(%)"] = profit_pct
+        if avg_price and sell_price:
+            # 평균매수가가 문자열인 경우 처리
+            if isinstance(avg_price, str):
+                try:
+                    avg_price = float(avg_price.replace(",", ""))
+                except (ValueError, TypeError):
+                    avg_price = None
+            # 매도가가 문자열인 경우 처리
+            if isinstance(sell_price, str):
+                try:
+                    sell_price = float(sell_price.replace(",", ""))
+                except (ValueError, TypeError):
+                    sell_price = None
+            
+            if avg_price and sell_price and avg_price > 0:
+                profit_pct = ((sell_price - avg_price) / avg_price) * 100
+                row["실현수익률(%)"] = profit_pct
+                # 매도가 저장 (참고용)
+                row["매도가"] = sell_price
+            else:
+                row["실현수익률(%)"] = 0
+                row["매도가"] = sell_price if sell_price else None
         else:
             row["실현수익률(%)"] = 0
+            row["매도가"] = sell_price if sell_price else None
         
         # ⭐ 축적식: 기존 History에 계속 추가 (제거 안 함)
         df_history = pd.concat([df_history, row.to_frame().T], ignore_index=True)
@@ -1111,6 +1146,19 @@ def main():
                 logger.info("✓ 텔레그램 일일 리포트 전송 완료")
             except Exception as e:
                 logger.error(f"텔레그램 전송 실패: {e}")
+        
+        # 9-1. 슬랙 일일 리포트 전송 (Block Kit 형식)
+        if SLACK_AVAILABLE:
+            try:
+                # 시스템 라벨 감지: SIGNAL_FILE에 따라 S1 또는 S2 설정
+                system_label = "S2"
+                if "s1" in signal_file.lower() or "s1_signals" in signal_file.lower():
+                    system_label = "S1"
+                
+                send_slack_daily_report(alerts, len(df_summary), system_label=system_label)
+                logger.info("✓ 슬랙 일일 리포트 전송 완료")
+            except Exception as e:
+                logger.error(f"슬랙 전송 실패: {e}")
 
         # 10. 완료
         logger.info("\n" + "=" * 80)

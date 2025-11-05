@@ -208,11 +208,42 @@ def get_enhanced_price_data(ticker: str, token: str) -> Optional[Dict]:
         
         # 명시적 키 이름으로 직접 접근 (올바른 매핑)
         data = {}
-        data['current'] = float(str(latest.get('cur_prc', 0)).replace(",", ""))    # 현재가
-        data['low'] = float(str(latest.get('low_pric', 0)).replace(",", ""))       # 저가
-        data['high'] = float(str(latest.get('high_pric', 0)).replace(",", ""))     # 고가
-        data['open'] = float(str(latest.get('open_pric', 0)).replace(",", ""))     # 시가
-        data['volume'] = int(str(latest.get('trde_qty', 0)).replace(",", ""))      # 거래량
+        
+        # 안전한 float 변환 (NaN 처리)
+        def safe_float_convert(value, default=0.0):
+            try:
+                if value is None or value == "":
+                    return default
+                value_str = str(value).replace(",", "")
+                if value_str.lower() in ['nan', 'none', '']:
+                    return default
+                result = float(value_str)
+                return result if not pd.isna(result) else default
+            except (ValueError, TypeError):
+                return default
+        
+        # 안전한 int 변환 (NaN 처리)
+        def safe_int_convert(value, default=0):
+            try:
+                if value is None or value == "":
+                    return default
+                value_str = str(value).replace(",", "")
+                if value_str.lower() in ['nan', 'none', '']:
+                    return default
+                result = float(value_str)
+                # math.isnan()과 pd.isna() 모두 체크 (일반 Python NaN과 pandas NaN 모두 처리)
+                import math
+                if math.isnan(result) or pd.isna(result) or pd.isinf(result):
+                    return default
+                return int(result)
+            except (ValueError, TypeError, OverflowError):
+                return default
+        
+        data['current'] = safe_float_convert(latest.get('cur_prc', 0))    # 현재가
+        data['low'] = safe_float_convert(latest.get('low_pric', 0))       # 저가
+        data['high'] = safe_float_convert(latest.get('high_pric', 0))     # 고가
+        data['open'] = safe_float_convert(latest.get('open_pric', 0))     # 시가
+        data['volume'] = safe_int_convert(latest.get('trde_qty', 0))      # 거래량
         
         # 필수 데이터 확인
         if 'current' not in data or data['current'] <= 0:
@@ -455,9 +486,30 @@ def safe_float(value):
     try:
         if isinstance(value, str):
             return float(value.replace(",", ""))
-        return float(value)
+        result = float(value)
+        # NaN 체크
+        if pd.isna(result) or pd.isinf(result):
+            return None
+        return result
     except (ValueError, TypeError):
         return None
+
+def safe_int(value, default=0):
+    """안전한 int 변환 함수 (NaN 처리)"""
+    if value is None or value == "":
+        return default
+    try:
+        if isinstance(value, str):
+            value = value.replace(",", "").strip()
+            if value.lower() in ['nan', 'none', '']:
+                return default
+        # 먼저 float로 변환하여 NaN 체크
+        float_val = float(value)
+        if pd.isna(float_val) or pd.isinf(float_val):
+            return default
+        return int(float_val)
+    except (ValueError, TypeError):
+        return default
 
 
 def get_sell_prices_from_excel(ticker: str) -> dict:
@@ -558,6 +610,9 @@ def check_simplified_alert(
         # 저가 기준 이격도 계산
         low_dist_buy1 = calculate_low_price_distance(low_price, buy1)
         
+        if low_dist_buy1 is None:
+            return False
+        
         # 저가가 매수선에 도달한 경우 (마이너스 이격도) - 매수 체결!
         if low_dist_buy1 <= 0:
             alert_key = "BUY1_EXECUTED"
@@ -567,6 +622,7 @@ def check_simplified_alert(
                 # 매도가 정보 가져오기
                 sell_prices = get_sell_prices_from_excel(ticker)
                 
+                # 텔레그램 전송 (기존)
                 send_realtime_alert(
                     alert_type=alert_type,
                     stock_name=stock_name,
@@ -579,7 +635,286 @@ def check_simplified_alert(
                     system_label=system_label,
                     low_price=low_price
                 )
-ㅇㅇㅇ
+                
+                # 슬랙 Block Kit 전송 (추가)
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy1,
+                    distance_pct=low_dist_buy1,
+                    sell_prices=sell_prices,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                # 알람 전송 기록
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+        else:
+            # 매수선 인접 알람 (1%, 3%, 5%)
+            # 우선순위: 1% > 3% > 5% (이미 전송된 알람은 스킵)
+            if 0 < low_dist_buy1 <= 1:
+                alert_key = "BUY1_1PCT"
+                alert_type = "1차 매수선 1% 인접"
+            elif 1 < low_dist_buy1 <= 3:
+                # 1% 알람이 이미 전송된 경우 스킵
+                if ticker_alerts.get("BUY1_1PCT", False):
+                    return False
+                alert_key = "BUY1_3PCT"
+                alert_type = "1차 매수선 3% 인접"
+            elif 3 < low_dist_buy1 <= 5:
+                # 1% 또는 3% 알람이 이미 전송된 경우 스킵
+                if ticker_alerts.get("BUY1_1PCT", False) or ticker_alerts.get("BUY1_3PCT", False):
+                    return False
+                alert_key = "BUY1_5PCT"
+                alert_type = "1차 매수선 5% 인접"
+            else:
+                return False
+            
+            if not ticker_alerts.get(alert_key, False):
+                # 텔레그램 전송 (기존)
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy1,
+                    distance_pct=low_dist_buy1,
+                    recipients=["all"],
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                # 슬랙 Block Kit 전송 (추가)
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy1,
+                    distance_pct=low_dist_buy1,
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                # 알람 전송 기록
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+    
+    # 2차 매수선 저가 기준 이격도 계산 (BOUGHT_1 상태)
+    elif buy_status == "BOUGHT_1":
+        low_dist_buy2 = calculate_low_price_distance(low_price, buy2)
+        
+        if low_dist_buy2 is None:
+            return False
+        
+        # 저가가 2차 매수선에 도달한 경우
+        if low_dist_buy2 <= 0:
+            alert_key = "BUY2_EXECUTED"
+            alert_type = "2차 매수 체결!"
+            
+            if not ticker_alerts.get(alert_key, False):
+                sell_prices = get_sell_prices_from_excel(ticker)
+                
+                # 텔레그램 전송
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy2,
+                    distance_pct=low_dist_buy2,
+                    recipients=["all"],
+                    sell_prices=sell_prices,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                # 슬랙 Block Kit 전송
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy2,
+                    distance_pct=low_dist_buy2,
+                    sell_prices=sell_prices,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+        else:
+            # 2차 매수선 인접 알람
+            if 0 < low_dist_buy2 <= 1:
+                alert_key = "BUY2_1PCT"
+                alert_type = "2차 매수선 1% 인접"
+            elif 1 < low_dist_buy2 <= 3:
+                if ticker_alerts.get("BUY2_1PCT", False):
+                    return False
+                alert_key = "BUY2_3PCT"
+                alert_type = "2차 매수선 3% 인접"
+            elif 3 < low_dist_buy2 <= 5:
+                if ticker_alerts.get("BUY2_1PCT", False) or ticker_alerts.get("BUY2_3PCT", False):
+                    return False
+                alert_key = "BUY2_5PCT"
+                alert_type = "2차 매수선 5% 인접"
+            else:
+                return False
+            
+            if not ticker_alerts.get(alert_key, False):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy2,
+                    distance_pct=low_dist_buy2,
+                    recipients=["all"],
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy2,
+                    distance_pct=low_dist_buy2,
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+    
+    # 3차 매수선 저가 기준 이격도 계산 (BOUGHT_2 상태)
+    elif buy_status == "BOUGHT_2":
+        low_dist_buy3 = calculate_low_price_distance(low_price, buy3)
+        
+        if low_dist_buy3 is None:
+            return False
+        
+        # 저가가 3차 매수선에 도달한 경우
+        if low_dist_buy3 <= 0:
+            alert_key = "BUY3_EXECUTED"
+            alert_type = "3차 매수 체결!"
+            
+            if not ticker_alerts.get(alert_key, False):
+                sell_prices = get_sell_prices_from_excel(ticker)
+                
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy3,
+                    distance_pct=low_dist_buy3,
+                    recipients=["all"],
+                    sell_prices=sell_prices,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy3,
+                    distance_pct=low_dist_buy3,
+                    sell_prices=sell_prices,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+        else:
+            # 3차 매수선 인접 알람
+            if 0 < low_dist_buy3 <= 1:
+                alert_key = "BUY3_1PCT"
+                alert_type = "3차 매수선 1% 인접"
+            elif 1 < low_dist_buy3 <= 3:
+                if ticker_alerts.get("BUY3_1PCT", False):
+                    return False
+                alert_key = "BUY3_3PCT"
+                alert_type = "3차 매수선 3% 인접"
+            elif 3 < low_dist_buy3 <= 5:
+                if ticker_alerts.get("BUY3_1PCT", False) or ticker_alerts.get("BUY3_3PCT", False):
+                    return False
+                alert_key = "BUY3_5PCT"
+                alert_type = "3차 매수선 5% 인접"
+            else:
+                return False
+            
+            if not ticker_alerts.get(alert_key, False):
+                send_realtime_alert(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy3,
+                    distance_pct=low_dist_buy3,
+                    recipients=["all"],
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                from slack_notifier import send_slack_realtime_alert_block_kit
+                send_slack_realtime_alert_block_kit(
+                    alert_type=alert_type,
+                    stock_name=stock_name,
+                    ticker=ticker,
+                    current_price=current_price,
+                    target_price=buy3,
+                    distance_pct=low_dist_buy3,
+                    sell_prices=None,
+                    system_label=system_label,
+                    low_price=low_price
+                )
+                
+                ticker_alerts[alert_key] = True
+                alerts[ticker] = ticker_alerts
+                history["alerts"] = alerts
+                save_alert_history(history)
+                
+                return True
+    
     return False
 
 
