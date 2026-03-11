@@ -12,3 +12,4 @@ pause
 
 powershell -ExecutionPolicy Bypass -Command "Start-Process powershell -Verb RunAs -ArgumentList '-ExecutionPolicy Bypass -File \"%~dp0setup_windows_scheduler.ps1\"'"
 
+

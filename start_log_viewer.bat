@@ -10,3 +10,4 @@ start "S12 로그 모니터" powershell -ExecutionPolicy Bypass -File "%~dp0auto
 timeout /t 1 > nul
 echo 완료
 
+

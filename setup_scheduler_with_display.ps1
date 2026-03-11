@@ -75,3 +75,4 @@ Write-Host "  2. 작업 목록에서 작업 우클릭 → '실행' 선택" -Fore
 Write-Host "  3. 표시 모드라면 새 창이 열립니다" -ForegroundColor White
 Write-Host "`n" -ForegroundColor White
 
+

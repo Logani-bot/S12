@@ -58,3 +58,4 @@ logs/realtime_monitor_YYYYMMDD.log  - 실시간 모니터링 로그
 
 **24/7 자동 주식 감시 시스템이 가동 중입니다!**
 
+

@@ -139,3 +139,4 @@ cd C:\Users\log\Desktop\Code\S12
 - [ ] 로그 파일 생성 확인
 - [ ] 텔레그램 메시지 수신 확인
 
+
